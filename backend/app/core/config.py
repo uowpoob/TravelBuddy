@@ -48,3 +48,5 @@ class Settings(BaseSettings):
             database=params.pop("dbname", None),
             query=params,
         )
+
+settings = Settings()

@@ -1,0 +1,73 @@
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.graph import END, START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
+
+from backend.app.agents.context_analyst.graph import build_context_analyst_graph
+from backend.app.agents.planner.graph import build_planner_graph
+from backend.app.agents.researcher.graph import build_researcher_graph
+from backend.app.agents.reviewer.graph import build_reviewer_graph
+from backend.app.graph.context import TravelBuddyContext
+from backend.app.graph.nodes.clarify import ClarifyNode
+from backend.app.graph.nodes.confirm import ConfirmNode
+from backend.app.graph.nodes.context_analyst import ContextAnalystNode
+from backend.app.graph.nodes.planner import PlannerNode
+from backend.app.graph.nodes.researcher import ResearcherNode
+from backend.app.graph.nodes.reviewer import ReviewerNode
+from backend.app.graph.nodes.save import SaveNode
+from backend.app.graph.nodes.understand import UnderstandNode
+from backend.app.graph.routes import (
+    route_after_confirm,
+    route_after_review,
+    route_after_understand,
+)
+from backend.app.graph.state import TripState
+
+
+def build_trip_graph(
+    checkpointer: BaseCheckpointSaver | None = None,
+) -> CompiledStateGraph:
+    """组装总图骨架，checkpointer 由后续运行入口传入。
+
+    节点业务逻辑尚未实现，当前用于明确图结构，不能端到端运行。
+    Clarify/Confirm 后续负责 interrupt/resume；Understand 初始化或重置
+    revision_count、confirmed 等状态；Planner 在自动修订时累加次数。
+    """
+    builder = StateGraph(TripState, context_schema=TravelBuddyContext)
+
+    builder.add_node("understand", UnderstandNode())
+    builder.add_node("clarify", ClarifyNode())
+    builder.add_node("researcher", ResearcherNode(build_researcher_graph()))
+    builder.add_node("context_analyst", ContextAnalystNode(build_context_analyst_graph()))
+    builder.add_node("planner", PlannerNode(build_planner_graph()))
+    builder.add_node("reviewer", ReviewerNode(build_reviewer_graph()))
+    builder.add_node("confirm", ConfirmNode())
+    builder.add_node("save", SaveNode())
+
+    builder.add_edge(START, "understand")
+    builder.add_conditional_edges(
+        "understand",
+        route_after_understand,
+        {
+            "clarify": "clarify",
+            "researcher": "researcher",
+            "context_analyst": "context_analyst",
+        },
+    )
+    builder.add_edge("clarify", "understand")
+
+    # 等两支调研全部完成，再调用 Planner。
+    builder.add_edge(["researcher", "context_analyst"], "planner")
+    builder.add_edge("planner", "reviewer")
+    builder.add_conditional_edges(
+        "reviewer",
+        route_after_review,
+        {"confirm": "confirm", "planner": "planner", "clarify": "clarify"},
+    )
+    builder.add_conditional_edges(
+        "confirm",
+        route_after_confirm,
+        {"save": "save", "understand": "understand"},
+    )
+    builder.add_edge("save", END)
+
+    return builder.compile(checkpointer=checkpointer)

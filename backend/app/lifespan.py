@@ -26,4 +26,3 @@ async def lifespan(app: FastAPI):
     finally:
         if app.state.db_engine is not None:
             await app.state.db_engine.dispose()
-1
