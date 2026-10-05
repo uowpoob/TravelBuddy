@@ -7,7 +7,7 @@ from backend.app.graph.context import TravelBuddyContext
 
 
 def build_researcher_graph() -> CompiledStateGraph:
-    """组装子图骨架；后续在这里创建、绑定模型和工具。"""
+    """组装地点调研子图骨架；节点执行逻辑后续实现。"""
     builder = StateGraph(ResearcherState, context_schema=TravelBuddyContext)
     builder.add_node("research", ResearchNode())
     builder.add_edge(START, "research")

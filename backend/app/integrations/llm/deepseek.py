@@ -1,6 +1,6 @@
 from langchain.chat_models import init_chat_model
 
-from TravelBuddy.bankend.app.core.config import settings
+from backend.app.core.config import settings
 
 
 chat_model = init_chat_model(

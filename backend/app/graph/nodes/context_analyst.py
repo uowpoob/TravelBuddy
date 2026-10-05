@@ -1,3 +1,4 @@
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.runtime import Runtime
 
@@ -16,11 +17,16 @@ class ContextAnalystNode:
         self,
         state: TripState,
         runtime: Runtime[TravelBuddyContext],
+        config: RunnableConfig,
     ) -> dict[str, object]:
         agent_input: ContextAnalystState = {
             "messages": [],
             "trip_request": state["trip_request"],
         }
-        result = await self.agent.ainvoke(agent_input, context=runtime.context)
-        # 只提取业务输出；占位节点尚未生成的字段不返回，内部 messages 不回传。
-        return {key: result[key] for key in ["travel_constraints"] if key in result}
+        result = await self.agent.ainvoke(
+            agent_input, config=config, context=runtime.context
+        )
+        # 内部消息留在子图，主图仅接收结构化约束。
+        return {
+            key: result[key] for key in ["travel_constraints"] if key in result
+        }

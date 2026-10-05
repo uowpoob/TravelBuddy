@@ -7,7 +7,7 @@ from backend.app.graph.context import TravelBuddyContext
 
 
 def build_reviewer_graph() -> CompiledStateGraph:
-    """组装子图骨架；后续在这里创建、绑定模型和工具。"""
+    """组装方案审核子图骨架；节点执行逻辑后续实现。"""
     builder = StateGraph(ReviewerState, context_schema=TravelBuddyContext)
     builder.add_node("review", ReviewNode())
     builder.add_edge(START, "review")

@@ -7,7 +7,7 @@ from backend.app.graph.context import TravelBuddyContext
 
 
 def build_context_analyst_graph() -> CompiledStateGraph:
-    """组装子图骨架；后续在这里创建、绑定模型和工具。"""
+    """组装约束分析子图骨架；节点执行逻辑后续实现。"""
     builder = StateGraph(ContextAnalystState, context_schema=TravelBuddyContext)
     builder.add_node("analyze_context", AnalyzeContextNode())
     builder.add_edge(START, "analyze_context")

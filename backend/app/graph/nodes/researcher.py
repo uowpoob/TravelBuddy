@@ -1,4 +1,4 @@
-
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.runtime import Runtime
 
@@ -17,11 +17,14 @@ class ResearcherNode:
         self,
         state: TripState,
         runtime: Runtime[TravelBuddyContext],
+        config: RunnableConfig,
     ) -> dict[str, object]:
         agent_input: ResearcherState = {
             "messages": [],
             "trip_request": state["trip_request"],
         }
-        result = await self.agent.ainvoke(agent_input, context=runtime.context)
-        # 只提取业务输出；占位节点尚未生成的字段不返回，内部 messages 不回传。
+        result = await self.agent.ainvoke(
+            agent_input, config=config, context=runtime.context
+        )
+        # 内部消息留在子图，主图仅接收候选地点。
         return {key: result[key] for key in ["candidates"] if key in result}
