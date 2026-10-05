@@ -1,3 +1,4 @@
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.runtime import Runtime
 
@@ -16,6 +17,7 @@ class ReviewerNode:
         self,
         state: TripState,
         runtime: Runtime[TravelBuddyContext],
+        config: RunnableConfig,
     ) -> dict[str, object]:
         agent_input: ReviewerState = {
             "messages": [],
@@ -23,10 +25,13 @@ class ReviewerNode:
             "candidates": state["candidates"],
             "travel_constraints": state["travel_constraints"],
             "itinerary": state["itinerary"],
+            # 确定性的业务规则检查尚未实现。
             "rule_issues": [],
         }
-        result = await self.agent.ainvoke(agent_input, context=runtime.context)
-        # 只提取业务输出；占位节点尚未生成的字段不返回，内部 messages 不回传。
+        result = await self.agent.ainvoke(
+            agent_input, config=config, context=runtime.context
+        )
+        # 内部消息留在子图，主图仅接收业务结果。
         return {
             key: result[key]
             for key in ["review_result", "clarification_question"]

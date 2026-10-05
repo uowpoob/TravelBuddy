@@ -18,7 +18,8 @@ class DayPlan(BaseModel):
 class EstimatedCost(BaseModel):
     """全体出行人员的预计总费用，单位为人民币元。"""
 
-    total: float = Field(ge=0)
+    # 未查询费用时保留未知，不能以 0 冒充预算估算。
+    total: float | None = Field(default=None, ge=0)
     breakdown: dict[str, float] = Field(default_factory=dict)
 
 
