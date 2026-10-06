@@ -65,6 +65,9 @@ FastAPI 启动时只保存客户端配置，不访问高德。
 # List all tools, including their descriptions and JSON schemas.
 uv run python -m backend.scripts.amap_mcp list
 
+# Save the discovered tools and their full schemas for inspection.
+uv run python -m backend.scripts.amap_mcp list --output .local/amap-tools.json
+
 # Example: use this only if list returns maps_weather with a city parameter.
 uv run python -m backend.scripts.amap_mcp call maps_weather --arguments '{"city":"杭州"}'
 
@@ -76,12 +79,71 @@ uv run python -m backend.scripts.amap_mcp call maps_weather --arguments-file ./w
 `--arguments` 与 `--arguments-file` 只能选择一个。
 命令不依赖数据库、DeepSeek 或正在运行的 FastAPI。
 结果输出保留原始 MCP 的 `content`、`structuredContent` 和 `isError`，
-工具执行失败或连接失败时返回非零退出码。当前未运行测试或真实高德调用。
+工具执行失败或连接失败时返回非零退出码。已实际执行工具发现并获取 15 个工具，
+完整列表保存于本地 `.local/amap-tools.json`；该文件是发现时的快照，重新运行命令可更新。
+当前未运行测试、模型调用或高德业务工具调用。
 
 Python 调用入口为 `AmapMCPClient()` 的 `await client.list_tools()` 和
 `await client.call_tool(name, arguments)`；返回 SDK 原生类型，工具失败检查
 `result.is_error`。FastAPI 路由可通过 `get_amap_mcp_client` 依赖获取同一客户端配置；
-未配置 Key 时该依赖返回 503。当前尚未将工具绑定到 Agent 或实现前端业务接口。
+未配置 Key 时该依赖返回 503。Researcher 和 Context Analyst 的工具绑定工厂已实现；
+Planner 工具绑定、调用方组装、节点执行逻辑和前端业务接口仍待后续接入。
+
+MCP 工具到 LangChain 工具的适配位于 `backend/app/integrations/mcp/adapter.py`。
+在异步函数中可以分步获取并适配：
+
+```python
+from backend.app.integrations.mcp import AmapMCPClient
+from backend.app.integrations.mcp.adapter import adapt_amap_tools
+
+client = AmapMCPClient()
+mcp_tools = await client.list_tools()
+agent_tools = adapt_amap_tools(mcp_tools, client)
+```
+
+`adapt_amap_tools` 保留高德的名称、描述和输入 JSON Schema，将调用绑定到
+`client.call_tool`。它本身不执行网络请求；`load_amap_tools(client)` 是将发现与
+适配合并的异步入口。返回的 `StructuredTool` 供后续按角色筛选后交给 `create_agent`。
+工具仅提供异步执行入口，应使用 `ainvoke` 或 Agent 的异步执行方式。
+成功调用向模型返回文本及结构化数据，完整 MCP 响应保存在 `ToolMessage.artifact`；
+连接或服务端工具执行失败转换为 `ToolException`，由 LangChain 返回工具错误。
+适配与 Agent 绑定代码尚未运行验证，当前未修改节点执行逻辑。
+
+Researcher 通过 `backend/app/agents/researcher/tools.py` 仅选取以下地点工具：
+`maps_text_search`、`maps_around_search`、`maps_search_detail`、`maps_geo`。
+缺少其中任一工具时明确报错；不绑定天气、路线或地图唤端工具。
+在异步函数中可以先加载工具，再同步构建 Agent：
+
+```python
+from backend.app.agents.researcher.agent import build_researcher_agent
+from backend.app.agents.researcher.tools import load_researcher_tools
+
+researcher_tools = await load_researcher_tools(client)
+researcher_agent = build_researcher_agent(tools=researcher_tools)
+```
+
+`build_researcher_agent` 现在要求显式传入 `tools`，会再次按角色筛选，
+保留 `ToolStrategy(Candidates)` 的结构化输出与可选 checkpointer。
+Researcher 提示词要求先查真实 POI 再筛选，地址解析坐标不能直接作为有 ID 的候选。
+构建 Agent 不执行模型或地点查询；`ResearchNode` 当前仍返回空更新，尚未实际运行 Agent。
+
+Context Analyst 通过 `backend/app/agents/context_analyst/tools.py` 仅筛选 `maps_weather`。
+加载函数先进行 MCP 工具发现和适配，再从内存列表筛选；此时不查询实际天气。
+在异步调用入口中应先加载，再传给同步构建函数：
+
+```python
+from backend.app.agents.context_analyst.agent import build_context_analyst_agent
+from backend.app.agents.context_analyst.tools import load_context_analyst_tools
+
+context_tools = await load_context_analyst_tools(client)
+context_agent = build_context_analyst_agent(tools=context_tools)
+```
+
+构建函数要求显式传入 `tools`，保留 `ToolStrategy(TravelConstraints)` 输出和
+可选 checkpointer。提示词要求按工具返回的真实日期匹配旅行区间，区分实况和预报，
+明确未覆盖日期、缺少出行日期或查询失败。`maps_weather` 的参数是 `city`，不传日期参数。
+以上是调用方用法示例，实际组装入口尚未加入业务流程；`AnalyzeContextNode` 仍返回空更新。
+本轮未运行测试、模型或天气查询。
 
 ## PostgreSQL
 
