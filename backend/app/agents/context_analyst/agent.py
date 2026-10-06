@@ -18,7 +18,7 @@ def build_context_analyst_agent(
 ) -> CompiledStateGraph:
     """绑定天气工具，创建输出 TravelConstraints 的出行约束 Agent。
 
-    调用方先异步加载工具，再显式传入；构建本身不访问高德或执行模型。
+    tools 由统一组装入口加载并传入，这里仅本地筛选，不访问高德或执行模型。
     """
     context_tools = select_context_analyst_tools(tools)
     from backend.app.integrations.llm.deepseek import chat_model

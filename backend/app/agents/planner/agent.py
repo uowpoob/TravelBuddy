@@ -18,7 +18,7 @@ def build_planner_agent(
 ) -> CompiledStateGraph:
     """绑定路线工具，创建输出 Itinerary 的行程规划 Agent。
 
-    调用方先异步加载工具，再显式传入；预算工具尚未实现。
+    tools 由统一组装入口加载并传入，这里仅本地筛选；预算工具尚未实现。
     构建本身不访问高德或执行模型。
     """
     planner_tools = select_planner_tools(tools)

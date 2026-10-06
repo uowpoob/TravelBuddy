@@ -49,4 +49,3 @@ class Settings(BaseSettings):
             query=params,
         )
 
-settings = Settings()

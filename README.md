@@ -57,7 +57,10 @@ GD_MCP_TIMEOUT_SECONDS=30
 客户端自动将 Key 加入鉴权参数，`GD_MCP_URL` 不需要填写密钥。
 配置与错误信息不打印鉴权 URL，SDK 的 HTTP 日志会隐藏此 Key。
 超时按每个 MCP 请求计算。每次操作在同一异步任务内建立和关闭会话，
-FastAPI 启动时只保存客户端配置，不访问高德。
+FastAPI 启动时，应用、高德与 DeepSeek 配置完整则统一执行工具发现并创建四个 Agent，
+保存在 `app.state.agents`。初始化不执行模型推理、地点、天气或路线查询。
+未配置必要字段，或高德发现、模型配置初始化失败时，Agent 保持未就绪并记录不含密钥的日志；
+高德或模型未就绪不阻止 API 健康检查。修正配置后重启后端，重新初始化。
 
 在项目根目录执行：
 
@@ -87,8 +90,10 @@ Python 调用入口为 `AmapMCPClient()` 的 `await client.list_tools()` 和
 `await client.call_tool(name, arguments)`；返回 SDK 原生类型，工具失败检查
 `result.is_error`。FastAPI 路由可通过 `get_amap_mcp_client` 依赖获取同一客户端配置；
 未配置 Key 时该依赖返回 503。Researcher 和 Context Analyst 的工具绑定工厂已实现；
-Planner 的路线工具绑定工厂也已实现；调用方组装、节点执行逻辑、预算估算和前端
-业务接口仍待后续接入。Reviewer 首版只读已有证据，不绑定外部工具。
+Planner 的路线工具绑定工厂也已实现。统一组装函数位于 `backend/app/agents/builder.py`；
+已由 `backend/app/lifespan.py` 在启动时调用。节点执行逻辑、预算估算和前端业务接口
+仍待后续实现。
+Reviewer 首版只读已有证据，不绑定外部工具。
 
 MCP 工具到 LangChain 工具的适配位于 `backend/app/integrations/mcp/adapter.py`。
 在异步函数中可以分步获取并适配：
@@ -110,61 +115,41 @@ agent_tools = adapt_amap_tools(mcp_tools, client)
 连接或服务端工具执行失败转换为 `ToolException`，由 LangChain 返回工具错误。
 适配与 Agent 绑定代码尚未运行验证，当前未修改节点执行逻辑。
 
-Researcher 通过 `backend/app/agents/researcher/tools.py` 仅选取以下地点工具：
-`maps_text_search`、`maps_around_search`、`maps_search_detail`、`maps_geo`。
-缺少其中任一工具时明确报错；不绑定天气、路线或地图唤端工具。
-在异步函数中可以先加载工具，再同步构建 Agent：
+创建多个 Agent 时统一获取并适配一次工具列表，不由每个角色单独加载。
+生命周期在配置完整时执行以下初始化，后续请求复用返回的 Agent：
 
 ```python
-from backend.app.agents.researcher.agent import build_researcher_agent
-from backend.app.agents.researcher.tools import load_researcher_tools
-
-researcher_tools = await load_researcher_tools(client)
-researcher_agent = build_researcher_agent(tools=researcher_tools)
+app.state.agents = await build_agents(app.state.amap_mcp_client)
 ```
 
-`build_researcher_agent` 现在要求显式传入 `tools`，会再次按角色筛选，
-保留 `ToolStrategy(Candidates)` 的结构化输出与可选 checkpointer。
+后续路由可使用 `Depends(get_agents)`，或显式调用
+`backend.app.api.dependencies.get_agents(request)` 获取缓存字典。
+字典键为 researcher、context_analyst、planner、reviewer；未初始化时依赖返回 503，
+不会重新创建 Agent。不要在每次请求中再次调用 `build_agents`。
+
+`build_agents` 内部只调用一次 `load_amap_tools(client)`，再将同一份工具列表
+传给 Researcher、Context Analyst、Planner 的构建函数。各角色 tools.py 只保留
+工具名称和同步 select 函数，从内存列表筛选，缺少必要工具时明确报错。
+Reviewer 构建时不接收外部工具。角色工厂保留结构化输出和可选 checkpointer。
+
+| Agent | 外部工具 | 结构化输出 |
+| --- | --- | --- |
+| Researcher | maps_text_search、maps_around_search、maps_search_detail、maps_geo | Candidates |
+| Context Analyst | maps_weather | TravelConstraints |
+| Planner | maps_direction_walking、maps_direction_driving、maps_direction_bicycling、maps_direction_transit_integrated、maps_distance | Itinerary |
+| Reviewer | 无，首版只读已有证据 | ReviewResult |
+
 Researcher 提示词要求先查真实 POI 再筛选，地址解析坐标不能直接作为有 ID 的候选。
-构建 Agent 不执行模型或地点查询；`ResearchNode` 当前仍返回空更新，尚未实际运行 Agent。
+Context Analyst 按天气工具实际返回的日期匹配旅行区间，区分实况和预报，说明未覆盖日期。
+Planner 用真实候选坐标和对应交通方式查询路线，将明确耗时换算成分钟；
+不能把直线距离当作实际路线耗时，也不能把部分交通费用当作完整旅行总费用。
 
-Context Analyst 通过 `backend/app/agents/context_analyst/tools.py` 仅筛选 `maps_weather`。
-加载函数先进行 MCP 工具发现和适配，再从内存列表筛选；此时不查询实际天气。
-在异步调用入口中应先加载，再传给同步构建函数：
-
-```python
-from backend.app.agents.context_analyst.agent import build_context_analyst_agent
-from backend.app.agents.context_analyst.tools import load_context_analyst_tools
-
-context_tools = await load_context_analyst_tools(client)
-context_agent = build_context_analyst_agent(tools=context_tools)
-```
-
-构建函数要求显式传入 `tools`，保留 `ToolStrategy(TravelConstraints)` 输出和
-可选 checkpointer。提示词要求按工具返回的真实日期匹配旅行区间，区分实况和预报，
-明确未覆盖日期、缺少出行日期或查询失败。`maps_weather` 的参数是 `city`，不传日期参数。
-以上是调用方用法示例，实际组装入口尚未加入业务流程；`AnalyzeContextNode` 仍返回空更新。
-本轮未运行测试、模型或天气查询。
-
-Planner 通过 `backend/app/agents/planner/tools.py` 筛选 5 个路线与距离工具：
-`maps_direction_walking`、`maps_direction_driving`、`maps_direction_bicycling`、
-`maps_direction_transit_integrated`、`maps_distance`。缺少必要工具时明确报错。
-在异步调用入口中加载，再显式传给构建函数：
-
-```python
-from backend.app.agents.planner.agent import build_planner_agent
-from backend.app.agents.planner.tools import load_planner_tools
-
-planner_tools = await load_planner_tools(client)
-planner_agent = build_planner_agent(tools=planner_tools)
-```
-
-保留 `ToolStrategy(Itinerary)` 输出和可选 checkpointer。提示词要求用真实候选坐标
-查询相邻地点路线，匹配交通偏好；公交提供 city、cityd，距离测量使用 origins。
-耗时按明确单位换算成分钟，不能将直线距离当作实际路线或耗时；失败时保留未知。
-预算工具尚未实现，不将部分交通费用当作完整旅行总费用。
-以上仍是调用方用法示例，实际组装入口和 `PlanNode` 执行尚未接通；
-本轮未运行测试、模型或路线查询。
+统一的是创建 Agent 时的工具发现流程；实际业务工具调用仍请求高德。
+当前客户端每次 call_tool 建立独立会话并读取工具元信息，尚未复用会话或缓存发现结果。
+build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客户端和 session 工厂缓存，
+并释放数据库引擎。核心配置模块不再在导入时实例化 Settings，模型配置延迟到创建模型时读取。
+所有内部节点继续返回空更新，尚未使用缓存 Agent 执行旅行流程。
+本轮未启动后端验证、运行测试、模型、天气或路线查询。
 
 ## PostgreSQL
 
