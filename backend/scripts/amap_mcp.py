@@ -16,7 +16,10 @@ from backend.app.integrations.mcp import AmapMCPClient, AmapMCPError
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="本地调用高德 MCP 服务")
     commands = parser.add_subparsers(dest="command", required=True)
-    commands.add_parser("list", help="列出工具名称、描述和参数 schema")
+    listing = commands.add_parser("list", help="列出工具名称、描述和参数 schema")
+    listing.add_argument(
+        "--output", type=Path, help="将完整工具列表保存为 UTF-8 JSON 文件"
+    )
     call = commands.add_parser("call", help="调用指定工具")
     call.add_argument("name", help="list 命令返回的工具名称")
     arguments = call.add_mutually_exclusive_group()
@@ -49,6 +52,16 @@ async def main(args: argparse.Namespace) -> int:
     if args.command == "list":
         tools = await client.list_tools()
         output = [tool.model_dump(mode="json", by_alias=True) for tool in tools]
+        if args.output is not None:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(output, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            print(f"已获取 {len(tools)} 个高德 MCP 工具，保存到：{args.output}")
+            for tool in tools:
+                print(f"- {tool.name}")
+            return 0
         exit_code = 0
     else:
         result = await client.call_tool(args.name, args.tool_arguments)
@@ -59,6 +72,9 @@ async def main(args: argparse.Namespace) -> int:
 
 
 if __name__ == "__main__":
+    # Windows 重定向输出时也使用 UTF-8，避免中文工具说明出现乱码。
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
     parsed_args = parse_args()
     try:
         code = asyncio.run(main(parsed_args), loop_factory=loop_factory)
@@ -70,5 +86,8 @@ if __name__ == "__main__":
         code = 1
     except AmapMCPError as exc:
         print(str(exc), file=sys.stderr)
+        code = 1
+    except OSError:
+        print("无法保存工具列表，请检查输出路径和写入权限。", file=sys.stderr)
         code = 1
     sys.exit(code)
