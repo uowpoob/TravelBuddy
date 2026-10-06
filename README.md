@@ -87,7 +87,8 @@ Python 调用入口为 `AmapMCPClient()` 的 `await client.list_tools()` 和
 `await client.call_tool(name, arguments)`；返回 SDK 原生类型，工具失败检查
 `result.is_error`。FastAPI 路由可通过 `get_amap_mcp_client` 依赖获取同一客户端配置；
 未配置 Key 时该依赖返回 503。Researcher 和 Context Analyst 的工具绑定工厂已实现；
-Planner 工具绑定、调用方组装、节点执行逻辑和前端业务接口仍待后续接入。
+Planner 的路线工具绑定工厂也已实现；调用方组装、节点执行逻辑、预算估算和前端
+业务接口仍待后续接入。Reviewer 首版只读已有证据，不绑定外部工具。
 
 MCP 工具到 LangChain 工具的适配位于 `backend/app/integrations/mcp/adapter.py`。
 在异步函数中可以分步获取并适配：
@@ -144,6 +145,26 @@ context_agent = build_context_analyst_agent(tools=context_tools)
 明确未覆盖日期、缺少出行日期或查询失败。`maps_weather` 的参数是 `city`，不传日期参数。
 以上是调用方用法示例，实际组装入口尚未加入业务流程；`AnalyzeContextNode` 仍返回空更新。
 本轮未运行测试、模型或天气查询。
+
+Planner 通过 `backend/app/agents/planner/tools.py` 筛选 5 个路线与距离工具：
+`maps_direction_walking`、`maps_direction_driving`、`maps_direction_bicycling`、
+`maps_direction_transit_integrated`、`maps_distance`。缺少必要工具时明确报错。
+在异步调用入口中加载，再显式传给构建函数：
+
+```python
+from backend.app.agents.planner.agent import build_planner_agent
+from backend.app.agents.planner.tools import load_planner_tools
+
+planner_tools = await load_planner_tools(client)
+planner_agent = build_planner_agent(tools=planner_tools)
+```
+
+保留 `ToolStrategy(Itinerary)` 输出和可选 checkpointer。提示词要求用真实候选坐标
+查询相邻地点路线，匹配交通偏好；公交提供 city、cityd，距离测量使用 origins。
+耗时按明确单位换算成分钟，不能将直线距离当作实际路线或耗时；失败时保留未知。
+预算工具尚未实现，不将部分交通费用当作完整旅行总费用。
+以上仍是调用方用法示例，实际组装入口和 `PlanNode` 执行尚未接通；
+本轮未运行测试、模型或路线查询。
 
 ## PostgreSQL
 
