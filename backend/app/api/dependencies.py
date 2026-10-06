@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator
 
 from fastapi import HTTPException, Request
+from langgraph.graph.state import CompiledStateGraph
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.app.integrations.mcp import AmapMCPClient
@@ -19,3 +20,11 @@ def get_amap_mcp_client(request: Request) -> AmapMCPClient:
     if client is None:
         raise HTTPException(status_code=503, detail="AMap MCP not configured")
     return client
+
+
+def get_agents(request: Request) -> dict[str, CompiledStateGraph]:
+    """获取应用启动时创建的 Agent，依赖解析不重新加载工具或创建 Agent。"""
+    agents: dict[str, CompiledStateGraph] | None = request.app.state.agents
+    if agents is None:
+        raise HTTPException(status_code=503, detail="Agents not initialized")
+    return agents

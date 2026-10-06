@@ -18,7 +18,7 @@ def build_researcher_agent(
 ) -> CompiledStateGraph:
     """绑定地点查询工具，创建输出 Candidates 的地点调研 Agent。
 
-    tools 可由 load_researcher_tools 异步加载，构建过程本身不访问高德。
+    tools 由统一组装入口加载并传入，这里仅本地筛选，不访问高德。
     """
     researcher_tools = select_researcher_tools(tools)
     from backend.app.integrations.llm.deepseek import chat_model
