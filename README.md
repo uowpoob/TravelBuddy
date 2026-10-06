@@ -38,6 +38,51 @@ uv run python -m backend --reload
 健康检查返回 HTTP 200 和 `{"status":"ok","service":"TravelBuddy"}`。
 此接口只检查 API 进程是否正常响应，不调用模型或高德服务。
 
+## 本地调用高德 MCP
+
+后端的 `backend/app/integrations/mcp/` 通过 Streamable HTTP 直接连接高德 MCP。
+接入地址来自[高德官方接入文档](https://lbs.amap.com/api/mcp-server/gettingstarted)。
+`mcp_server/` 保留，后续将 TravelBuddy 完成的行程规划、修改等业务能力封装为对外工具；
+当前调用高德不需要启动本地 MCP Server。前端继续通过 FastAPI 业务 API 获取结果。
+
+在根目录 `.env` 中配置高德 Web 服务 Key；已有 `GD_API_KEY` 可直接复用。
+以下两个配置可选，未填写时使用所示默认值：
+
+```dotenv
+GD_API_KEY=YOUR_AMAP_WEB_SERVICE_KEY
+GD_MCP_URL=https://mcp.amap.com/mcp
+GD_MCP_TIMEOUT_SECONDS=30
+```
+
+客户端自动将 Key 加入鉴权参数，`GD_MCP_URL` 不需要填写密钥。
+配置与错误信息不打印鉴权 URL，SDK 的 HTTP 日志会隐藏此 Key。
+超时按每个 MCP 请求计算。每次操作在同一异步任务内建立和关闭会话，
+FastAPI 启动时只保存客户端配置，不访问高德。
+
+在项目根目录执行：
+
+```powershell
+# List all tools, including their descriptions and JSON schemas.
+uv run python -m backend.scripts.amap_mcp list
+
+# Example: use this only if list returns maps_weather with a city parameter.
+uv run python -m backend.scripts.amap_mcp call maps_weather --arguments '{"city":"杭州"}'
+
+# Alternatively, read a JSON object from a UTF-8 file.
+uv run python -m backend.scripts.amap_mcp call maps_weather --arguments-file ./weather-arguments.json
+```
+
+工具名称与参数以 `list` 返回的实际 schema 为准；不写参数时发送空 JSON 对象。
+`--arguments` 与 `--arguments-file` 只能选择一个。
+命令不依赖数据库、DeepSeek 或正在运行的 FastAPI。
+结果输出保留原始 MCP 的 `content`、`structuredContent` 和 `isError`，
+工具执行失败或连接失败时返回非零退出码。当前未运行测试或真实高德调用。
+
+Python 调用入口为 `AmapMCPClient()` 的 `await client.list_tools()` 和
+`await client.call_tool(name, arguments)`；返回 SDK 原生类型，工具失败检查
+`result.is_error`。FastAPI 路由可通过 `get_amap_mcp_client` 依赖获取同一客户端配置；
+未配置 Key 时该依赖返回 503。当前尚未将工具绑定到 Agent 或实现前端业务接口。
+
 ## PostgreSQL
 
 业务数据使用 SQLAlchemy 访问，业务表变更使用 Alembic 管理；LangGraph 检查点由
