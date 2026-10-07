@@ -58,7 +58,8 @@ GD_MCP_TIMEOUT_SECONDS=30
 配置与错误信息不打印鉴权 URL，SDK 的 HTTP 日志会隐藏此 Key。
 超时按每个 MCP 请求计算。每次操作在同一异步任务内建立和关闭会话，
 FastAPI 启动时，应用、高德与 DeepSeek 配置完整则统一执行工具发现并创建四个 Agent，
-保存在 `app.state.agents`。初始化不执行模型推理、地点、天气或路线查询。
+保存在 `app.state.agents`，并注入四个专业子图，组装后缓存总图到 `app.state.trip_graph`。
+初始化不执行模型推理、地点、天气或路线查询。
 未配置必要字段，或高德发现、模型配置初始化失败时，Agent 保持未就绪并记录不含密钥的日志；
 高德或模型未就绪不阻止 API 健康检查。修正配置后重启后端，重新初始化。
 
@@ -84,15 +85,15 @@ uv run python -m backend.scripts.amap_mcp call maps_weather --arguments-file ./w
 结果输出保留原始 MCP 的 `content`、`structuredContent` 和 `isError`，
 工具执行失败或连接失败时返回非零退出码。已实际执行工具发现并获取 15 个工具，
 完整列表保存于本地 `.local/amap-tools.json`；该文件是发现时的快照，重新运行命令可更新。
-当前未运行测试、模型调用或高德业务工具调用。
+尚未运行真实模型调用或高德业务工具调用。
 
 Python 调用入口为 `AmapMCPClient()` 的 `await client.list_tools()` 和
 `await client.call_tool(name, arguments)`；返回 SDK 原生类型，工具失败检查
 `result.is_error`。FastAPI 路由可通过 `get_amap_mcp_client` 依赖获取同一客户端配置；
 未配置 Key 时该依赖返回 503。Researcher 和 Context Analyst 的工具绑定工厂已实现；
 Planner 的路线工具绑定工厂也已实现。统一组装函数位于 `backend/app/agents/builder.py`；
-已由 `backend/app/lifespan.py` 在启动时调用。节点执行逻辑、预算估算和前端业务接口
-仍待后续实现。
+已由 `backend/app/lifespan.py` 在启动时调用。四个专业节点现已调用缓存 Agent，
+将结构化输出交回总图；普通流程节点、预算估算和前端业务接口仍待后续实现。
 Reviewer 首版只读已有证据，不绑定外部工具。
 
 MCP 工具到 LangChain 工具的适配位于 `backend/app/integrations/mcp/adapter.py`。
@@ -113,13 +114,14 @@ agent_tools = adapt_amap_tools(mcp_tools, client)
 工具仅提供异步执行入口，应使用 `ainvoke` 或 Agent 的异步执行方式。
 成功调用向模型返回文本及结构化数据，完整 MCP 响应保存在 `ToolMessage.artifact`；
 连接或服务端工具执行失败转换为 `ToolException`，由 LangChain 返回工具错误。
-适配与 Agent 绑定代码尚未运行验证，当前未修改节点执行逻辑。
+真实模型和高德业务工具调用尚未运行验证。
 
 创建多个 Agent 时统一获取并适配一次工具列表，不由每个角色单独加载。
 生命周期在配置完整时执行以下初始化，后续请求复用返回的 Agent：
 
 ```python
 app.state.agents = await build_agents(app.state.amap_mcp_client)
+app.state.trip_graph = build_trip_graph(app.state.agents)
 ```
 
 后续路由可使用 `Depends(get_agents)`，或显式调用
@@ -131,6 +133,15 @@ app.state.agents = await build_agents(app.state.amap_mcp_client)
 传给 Researcher、Context Analyst、Planner 的构建函数。各角色 tools.py 只保留
 工具名称和同步 select 函数，从内存列表筛选，缺少必要工具时明确报错。
 Reviewer 构建时不接收外部工具。角色工厂保留结构化输出和可选 checkpointer。
+
+`build_trip_graph(agents, checkpointer=None)` 将字典中的 Agent 传给各专业子图的
+执行节点。节点把所需业务输入编码成 JSON 用户消息，异步调用 Agent，校验
+`structured_response` 并写入子图状态。总图包装节点只接收 candidates、
+travel_constraints、itinerary、review_result 和 clarification_question，
+内部模型与工具消息留在专业子图。Planner 修订时携带旧行程和审核意见。
+接口可用 `Depends(get_trip_graph)` 获取缓存总图；未就绪时返回 503。
+总图仍需实现 Understand、Clarify、Confirm、Save 和修订计数，尚不能直接
+从原始用户消息完成完整旅行流程。生命周期尚未接入 checkpoint。
 
 | Agent | 外部工具 | 结构化输出 |
 | --- | --- | --- |
@@ -148,8 +159,8 @@ Planner 用真实候选坐标和对应交通方式查询路线，将明确耗时
 当前客户端每次 call_tool 建立独立会话并读取工具元信息，尚未复用会话或缓存发现结果。
 build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客户端和 session 工厂缓存，
 并释放数据库引擎。核心配置模块不再在导入时实例化 Settings，模型配置延迟到创建模型时读取。
-所有内部节点继续返回空更新，尚未使用缓存 Agent 执行旅行流程。
-本轮未启动后端验证、运行测试、模型、天气或路线查询。
+四个专业内部节点已使用缓存 Agent；普通流程节点仍返回空更新。
+测试使用模拟模型验证结构化结果交接，不执行真实模型、天气或路线查询。
 
 ## PostgreSQL
 

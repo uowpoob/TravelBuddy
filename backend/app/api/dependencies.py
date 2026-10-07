@@ -28,3 +28,11 @@ def get_agents(request: Request) -> dict[str, CompiledStateGraph]:
     if agents is None:
         raise HTTPException(status_code=503, detail="Agents not initialized")
     return agents
+
+
+def get_trip_graph(request: Request) -> CompiledStateGraph:
+    """获取已注入缓存 Agent 的总图，不在请求中重新组装。"""
+    graph: CompiledStateGraph | None = request.app.state.trip_graph
+    if graph is None:
+        raise HTTPException(status_code=503, detail="Trip graph not initialized")
+    return graph

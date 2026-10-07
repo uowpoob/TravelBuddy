@@ -32,4 +32,4 @@ class PlannerNode:
             agent_input, config=config, context=runtime.context
         )
         # 内部消息留在子图；修订计数逻辑后续实现。
-        return {key: result[key] for key in ["itinerary"] if key in result}
+        return {"itinerary": result["itinerary"]}

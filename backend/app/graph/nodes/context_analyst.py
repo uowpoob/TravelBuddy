@@ -27,6 +27,4 @@ class ContextAnalystNode:
             agent_input, config=config, context=runtime.context
         )
         # 内部消息留在子图，主图仅接收结构化约束。
-        return {
-            key: result[key] for key in ["travel_constraints"] if key in result
-        }
+        return {"travel_constraints": result["travel_constraints"]}

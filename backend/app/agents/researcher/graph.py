@@ -6,10 +6,10 @@ from backend.app.agents.researcher.state import ResearcherState
 from backend.app.graph.context import TravelBuddyContext
 
 
-def build_researcher_graph() -> CompiledStateGraph:
-    """组装地点调研子图骨架；节点执行逻辑后续实现。"""
+def build_researcher_graph(agent: CompiledStateGraph) -> CompiledStateGraph:
+    """将已构建的地点 Agent 注入子图执行节点。"""
     builder = StateGraph(ResearcherState, context_schema=TravelBuddyContext)
-    builder.add_node("research", ResearchNode())
+    builder.add_node("research", ResearchNode(agent))
     builder.add_edge(START, "research")
     builder.add_edge("research", END)
     return builder.compile()

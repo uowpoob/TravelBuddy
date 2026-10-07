@@ -33,7 +33,6 @@ class ReviewerNode:
         )
         # 内部消息留在子图，主图仅接收业务结果。
         return {
-            key: result[key]
-            for key in ["review_result", "clarification_question"]
-            if key in result
+            "review_result": result["review_result"],
+            "clarification_question": result["clarification_question"],
         }
