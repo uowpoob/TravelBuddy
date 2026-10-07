@@ -1,5 +1,6 @@
 from collections.abc import Mapping
 
+from langchain_core.language_models import BaseChatModel
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -28,13 +29,13 @@ from backend.app.graph.state import TripState
 def build_trip_graph(
     agents: Mapping[str, CompiledStateGraph],
     checkpointer: BaseCheckpointSaver | None = None,
+    *,
+    understand_model: BaseChatModel | None = None,
 ) -> CompiledStateGraph:
     """复用已构建的四个 Agent，组装专业子图和总图。
 
-    普通流程节点仍为骨架，尚不能从原始用户消息端到端运行。
-    checkpointer 由运行入口传入。
-    Clarify/Confirm 后续负责 interrupt/resume；Understand 初始化或重置
-    revision_count、confirmed 等状态；Planner 在自动修订时累加次数。
+    Understand 已实现需求提取与合并；Clarify、Confirm、Save 仍为骨架。
+    checkpointer 由运行入口传入，暂停恢复与修订计数留待后续实现。
     """
     required_agents = {"researcher", "context_analyst", "planner", "reviewer"}
     missing_agents = required_agents.difference(agents)
@@ -43,7 +44,7 @@ def build_trip_graph(
 
     builder = StateGraph(TripState, context_schema=TravelBuddyContext)
 
-    builder.add_node("understand", UnderstandNode())
+    builder.add_node("understand", UnderstandNode(understand_model))
     builder.add_node("clarify", ClarifyNode())
     builder.add_node(
         "researcher", ResearcherNode(build_researcher_graph(agents["researcher"]))

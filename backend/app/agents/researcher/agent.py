@@ -8,7 +8,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from backend.app.agents.researcher.tools import select_researcher_tools
 from backend.app.prompts.researcher import SYSTEM_PROMPT
-from backend.app.schemas.place import Candidates
+from backend.app.schemas.structured_output import Candidates
 
 
 def build_researcher_agent(

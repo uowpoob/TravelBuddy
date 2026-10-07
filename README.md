@@ -140,8 +140,23 @@ Reviewer 构建时不接收外部工具。角色工厂保留结构化输出和�
 travel_constraints、itinerary、review_result 和 clarification_question，
 内部模型与工具消息留在专业子图。Planner 修订时携带旧行程和审核意见。
 接口可用 `Depends(get_trip_graph)` 获取缓存总图；未就绪时返回 503。
-总图仍需实现 Understand、Clarify、Confirm、Save 和修订计数，尚不能直接
+总图仍需实现 Clarify、Confirm、Save 和修订计数，尚不能直接
 从原始用户消息完成完整旅行流程。生命周期尚未接入 checkpoint。
+
+Understand 已实现：读取最新一条用户消息、已有 TripRequest、近期对话和审核意见，
+通过结构化模型提取本轮更新的字段，再由 Python 合并需求与检查必填项。
+未提及的字段保持原值，支持明确清除字段；新旅行从空需求开始，清理旧行程状态。
+按天调整等额外要求写入 TripRequest.additional_requirements。
+当前必填项为目的地、出行日期、1–5 天的天数、人数和交通方式；给出预算时，
+还需明确总额或人均口径。出发城市和预算可以留空。
+缺失项或模型识别的歧义生成 clarification_question，并路由到 Clarify。
+每次重新理解需求会重置审核、确认和修订状态；修改当前行程时保留旧行程供规划参考。
+模型在首次需要提取时加载；build_trip_graph 的 understand_model 参数可注入测试模型。
+
+模型结构化输出统一从 `backend/app/schemas/structured_output.py` 导入：
+Understand 使用专用的 RequestUnderstanding；四个专业 Agent 分别使用 Candidates、
+TravelConstraints、Itinerary、ReviewResult。后四个直接导出既有业务类，同时用于
+总图 State 字段，保持同一份字段定义。各业务类的文档字符串标注了其输出角色和状态字段。
 
 | Agent | 外部工具 | 结构化输出 |
 | --- | --- | --- |
