@@ -34,8 +34,9 @@ def build_trip_graph(
 ) -> CompiledStateGraph:
     """复用已构建的四个 Agent，组装专业子图和总图。
 
-    Understand 已实现需求提取与合并；Clarify、Confirm、Save 仍为骨架。
-    checkpointer 由运行入口传入，暂停恢复与修订计数留待后续实现。
+    Understand 提取与合并需求；Clarify 暂停并将回答交回 Understand。
+    Clarify 恢复需要入口传入 checkpointer，并复用同一 thread_id。
+    Confirm、Save 与修订计数仍待实现。
     """
     required_agents = {"researcher", "context_analyst", "planner", "reviewer"}
     missing_agents = required_agents.difference(agents)
