@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from backend.app.agents.builder import build_agents
 from backend.app.core.config import Settings
 from backend.app.db.session import create_engine
+from backend.app.graph.builder import build_trip_graph
 from backend.app.integrations.mcp import AmapMCPClient, AmapMCPError, AmapMCPSettings
-
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI):
     app.state.session_factory = None
     app.state.amap_mcp_client = None
     app.state.agents = None
+    app.state.trip_graph = None
     settings: Settings | None = None
     try:
         try:
@@ -54,7 +55,8 @@ async def lifespan(app: FastAPI):
         else:
             try:
                 # 每次应用启动统一发现一次工具，然后创建并复用四个 Agent。
-                app.state.agents = await build_agents(app.state.amap_mcp_client)
+                agents = await build_agents(app.state.amap_mcp_client)
+                trip_graph = build_trip_graph(agents)
             except (AmapMCPError, ValueError) as exc:
                 # 配置异常可能包含密钥，只记录错误类型，不输出原始异常。
                 logger.error(
@@ -62,10 +64,13 @@ async def lifespan(app: FastAPI):
                     type(exc).__name__,
                 )
             else:
+                app.state.agents = agents
+                app.state.trip_graph = trip_graph
                 logger.info("已初始化 %d 个 Agent。", len(app.state.agents))
 
         yield
     finally:
+        app.state.trip_graph = None
         app.state.agents = None
         app.state.amap_mcp_client = None
         app.state.session_factory = None

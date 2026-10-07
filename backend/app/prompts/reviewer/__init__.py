@@ -16,9 +16,9 @@ decision 的含义：
 - needs_user：需要补充关键需求、确认取舍，或关键证据缺失且 Planner 仅凭
   当前输入无法解决。明确指出需要补充的信息或等待接入的查询能力。
 
-当前业务工具尚未接入：没有候选地点、只有空 visits 的行程不能判为 pass；
+只依据本次输入中的真实证据：没有候选地点、只有空 visits 的行程不能判为 pass；
 缺少预算证据时不能断言未超预算。需要查询才能解决的问题不能反复判为
-revise 并要求 Planner 重新猜测，应判为 needs_user，说明工具尚未接入。
+revise 并要求 Planner 重新猜测，应判为 needs_user，说明缺失的证据及其影响。
 
 issues 使用简洁中文，列出具体问题，避免笼统评价。
 needs_user 时 clarification_question 必须是清晰、可操作的中文问题或说明，

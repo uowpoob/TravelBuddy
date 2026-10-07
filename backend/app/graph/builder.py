@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -24,22 +26,34 @@ from backend.app.graph.state import TripState
 
 
 def build_trip_graph(
+    agents: Mapping[str, CompiledStateGraph],
     checkpointer: BaseCheckpointSaver | None = None,
 ) -> CompiledStateGraph:
-    """组装总图骨架，checkpointer 由后续运行入口传入。
+    """复用已构建的四个 Agent，组装专业子图和总图。
 
-    节点业务逻辑尚未实现，当前用于明确图结构，不能端到端运行。
+    普通流程节点仍为骨架，尚不能从原始用户消息端到端运行。
+    checkpointer 由运行入口传入。
     Clarify/Confirm 后续负责 interrupt/resume；Understand 初始化或重置
     revision_count、confirmed 等状态；Planner 在自动修订时累加次数。
     """
+    required_agents = {"researcher", "context_analyst", "planner", "reviewer"}
+    missing_agents = required_agents.difference(agents)
+    if missing_agents:
+        raise ValueError(f"缺少 Agent：{', '.join(sorted(missing_agents))}")
+
     builder = StateGraph(TripState, context_schema=TravelBuddyContext)
 
     builder.add_node("understand", UnderstandNode())
     builder.add_node("clarify", ClarifyNode())
-    builder.add_node("researcher", ResearcherNode(build_researcher_graph()))
-    builder.add_node("context_analyst", ContextAnalystNode(build_context_analyst_graph()))
-    builder.add_node("planner", PlannerNode(build_planner_graph()))
-    builder.add_node("reviewer", ReviewerNode(build_reviewer_graph()))
+    builder.add_node(
+        "researcher", ResearcherNode(build_researcher_graph(agents["researcher"]))
+    )
+    builder.add_node(
+        "context_analyst",
+        ContextAnalystNode(build_context_analyst_graph(agents["context_analyst"])),
+    )
+    builder.add_node("planner", PlannerNode(build_planner_graph(agents["planner"])))
+    builder.add_node("reviewer", ReviewerNode(build_reviewer_graph(agents["reviewer"])))
     builder.add_node("confirm", ConfirmNode())
     builder.add_node("save", SaveNode())
 

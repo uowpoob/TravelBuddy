@@ -6,10 +6,10 @@ from backend.app.agents.planner.state import PlannerState
 from backend.app.graph.context import TravelBuddyContext
 
 
-def build_planner_graph() -> CompiledStateGraph:
-    """组装行程规划子图骨架；节点执行逻辑后续实现。"""
+def build_planner_graph(agent: CompiledStateGraph) -> CompiledStateGraph:
+    """将已构建的规划 Agent 注入子图执行节点。"""
     builder = StateGraph(PlannerState, context_schema=TravelBuddyContext)
-    builder.add_node("plan", PlanNode())
+    builder.add_node("plan", PlanNode(agent))
     builder.add_edge(START, "plan")
     builder.add_edge("plan", END)
     return builder.compile()

@@ -13,8 +13,8 @@ from backend.app.integrations.mcp.client import AmapMCPClient
 async def build_agents(client: AmapMCPClient) -> dict[str, CompiledStateGraph]:
     """一次工具发现流程，共享结果并由各工厂本地筛选。
 
-    FastAPI 生命周期在配置完整时调用并保存返回的 Agent。
-    创建 Agent 不执行模型或业务工具；主图与节点的运行资源接入留待后续实现。
+    FastAPI 生命周期在配置完整时调用，保存 Agent 并将其注入总图的专业子节点。
+    创建 Agent 不执行模型或业务工具。
     """
     all_tools = await load_amap_tools(client)
 

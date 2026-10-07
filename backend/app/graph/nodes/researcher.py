@@ -27,4 +27,4 @@ class ResearcherNode:
             agent_input, config=config, context=runtime.context
         )
         # 内部消息留在子图，主图仅接收候选地点。
-        return {key: result[key] for key in ["candidates"] if key in result}
+        return {"candidates": result["candidates"]}
