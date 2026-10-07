@@ -11,6 +11,7 @@ class TripState(MessagesState, total=False):
 
     total=False 允许节点逐步补充字段，不会自动为字段设置默认值。
     Understand 初始化或重置 revision_count=0、confirmed=False。
+    Confirm 根据用户对当前方案的回答更新 confirmed。
     Agent 的内部 messages 留在各自子图，主图只接收其业务结果。
     """
 
