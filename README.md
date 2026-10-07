@@ -60,8 +60,8 @@ GD_MCP_TIMEOUT_SECONDS=30
 FastAPI 启动时，应用、高德与 DeepSeek 配置完整则统一执行工具发现并创建四个 Agent，
 保存在 `app.state.agents`，并注入四个专业子图，组装后缓存总图到 `app.state.trip_graph`。
 初始化不执行模型推理、地点、天气或路线查询。
-未配置必要字段，或高德发现、模型配置初始化失败时，Agent 保持未就绪并记录不含密钥的日志；
-高德或模型未就绪不阻止 API 健康检查。修正配置后重启后端，重新初始化。
+未配置必要字段，或高德发现、模型、checkpoint 初始化失败时，旅行流程保持未就绪并记录不含密钥的日志；
+这些初始化失败不阻止 API 健康检查。修正配置后重启后端，重新初始化。
 
 在项目根目录执行：
 
@@ -121,7 +121,8 @@ agent_tools = adapt_amap_tools(mcp_tools, client)
 
 ```python
 app.state.agents = await build_agents(app.state.amap_mcp_client)
-app.state.trip_graph = build_trip_graph(app.state.agents)
+saver = await checkpoint_stack.enter_async_context(open_checkpointer(settings))
+app.state.trip_graph = build_trip_graph(app.state.agents, checkpointer=saver)
 ```
 
 后续路由可使用 `Depends(get_agents)`，或显式调用
@@ -140,8 +141,8 @@ Reviewer 构建时不接收外部工具。角色工厂保留结构化输出和�
 travel_constraints、itinerary、review_result 和 clarification_question，
 内部模型与工具消息留在专业子图。Planner 修订时携带旧行程和审核意见。
 接口可用 `Depends(get_trip_graph)` 获取缓存总图；未就绪时返回 503。
-总图仍需实现 Clarify、Confirm、Save 和修订计数，尚不能直接
-从原始用户消息完成完整旅行流程。生命周期尚未接入 checkpoint。
+总图仍需实现 Confirm、Save 和修订计数，尚不能直接
+从原始用户消息完成完整旅行流程。生命周期已接入 checkpoint，并在关闭时释放 saver。
 
 Understand 已实现：读取最新一条用户消息、已有 TripRequest、近期对话和审核意见，
 通过结构化模型提取本轮更新的字段，再由 Python 合并需求与检查必填项。
@@ -152,6 +153,40 @@ Understand 已实现：读取最新一条用户消息、已有 TripRequest、近
 缺失项或模型识别的歧义生成 clarification_question，并路由到 Clarify。
 每次重新理解需求会重置审核、确认和修订状态；修改当前行程时保留旧行程供规划参考。
 模型在首次需要提取时加载；build_trip_graph 的 understand_model 参数可注入测试模型。
+
+Clarify 已实现动态暂停：`interrupt` 返回 JSON 问题，包含 `type="clarify"`、
+`question`、`missing_fields` 和 `issues`。问题优先使用已有澄清问题；没有时依据
+缺失字段、审核问题或通用提示生成。调用方通过 `result["__interrupt__"][0].value`
+展示问题，再使用相同 `thread_id` 和 `Command(resume="用户回答")` 恢复。
+回答必须是非空字符串，会去除两端空白；无效回答抛出 `pydantic.ValidationError`，
+可以用同一 thread 重试，不追加消息或进入 Understand。
+有效回答将问题和回答分别写入 AIMessage / HumanMessage，经既有边回到 Understand；
+若信息仍不完整，会再次暂停。
+
+以下代码在异步函数中运行，`graph` 为缓存主图，`context` 为 TravelBuddyContext：
+
+```python
+from langchain_core.messages import HumanMessage
+from langgraph.types import Command
+
+config = {"configurable": {"thread_id": "trip-001"}}
+result = await graph.ainvoke(
+    {"messages": [HumanMessage(content="想去杭州")]},
+    config=config,
+    context=context,
+)
+question = result["__interrupt__"][0].value["question"]
+result = await graph.ainvoke(
+    Command(resume="2026-10-10 出发，玩两天"),
+    config=config,
+    context=context,
+)
+# 仍缺人数和交通方式时，result 中会再次出现 __interrupt__。
+```
+
+独立构建图时须传入 checkpointer；应用生命周期根据 `LANGGRAPH_PG_DSN` 使用
+PostgreSQL saver，未配置时使用内存 saver。内存只能在当前进程中恢复；
+PostgreSQL 表须先用现有初始化脚本建立。旅行恢复 HTTP 接口仍待实现。
 
 模型结构化输出统一从 `backend/app/schemas/structured_output.py` 导入：
 Understand 使用专用的 RequestUnderstanding；四个专业 Agent 分别使用 Candidates、
@@ -193,7 +228,7 @@ build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客�
 - 未设置、留空或仅包含空白：使用内存检查点，输出警告；进程重启后状态丢失。
 - 填写 PostgreSQL 连接串：使用持久化检查点，可以与 `DATABASE_DSN` 填相同的值。
   连接失败会报错，不会自动退回内存。
-- 每次打开内存 saver 都是新的存储；后续接入 Graph 时应在应用生命周期中复用同一个 saver。
+- 每次打开内存 saver 都是新的存储；应用生命周期在当前进程内复用同一个 saver。
 
 数据库初始化（先确保目标数据库已存在）：
 
@@ -204,7 +239,7 @@ uv run python -m backend.scripts.init_checkpoints
 ```
 
 检查点脚本在内存模式下会提示并跳过；PostgreSQL 模式仍由该脚本显式建表或升级表结构。
-当前检查点封装尚未接入应用生命周期和业务 Graph。
+检查点已接入应用生命周期和旅行主图；真实 PostgreSQL 重启恢复尚未运行验证。
 
 修改 `.env` 后重启后端。访问 `/health/db` 会执行 `SELECT 1`：
 

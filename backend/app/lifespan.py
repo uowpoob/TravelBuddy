@@ -1,7 +1,8 @@
 import logging
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 
 from fastapi import FastAPI
+from psycopg import Error as PsycopgError
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
@@ -9,6 +10,7 @@ from backend.app.agents.builder import build_agents
 from backend.app.core.config import Settings
 from backend.app.db.session import create_engine
 from backend.app.graph.builder import build_trip_graph
+from backend.app.graph.checkpoints import open_checkpointer
 from backend.app.integrations.mcp import AmapMCPClient, AmapMCPError, AmapMCPSettings
 
 logger = logging.getLogger(__name__)
@@ -22,6 +24,7 @@ async def lifespan(app: FastAPI):
     app.state.agents = None
     app.state.trip_graph = None
     settings: Settings | None = None
+    checkpoint_stack = AsyncExitStack()
     try:
         try:
             mcp_settings = AmapMCPSettings()
@@ -56,11 +59,14 @@ async def lifespan(app: FastAPI):
             try:
                 # 每次应用启动统一发现一次工具，然后创建并复用四个 Agent。
                 agents = await build_agents(app.state.amap_mcp_client)
-                trip_graph = build_trip_graph(agents)
-            except (AmapMCPError, ValueError) as exc:
+                saver = await checkpoint_stack.enter_async_context(
+                    open_checkpointer(settings)
+                )
+                trip_graph = build_trip_graph(agents, checkpointer=saver)
+            except (AmapMCPError, ValueError, PsycopgError) as exc:
                 # 配置异常可能包含密钥，只记录错误类型，不输出原始异常。
                 logger.error(
-                    "Agent 初始化失败（%s），请检查高德 MCP 和模型配置。",
+                    "旅行流程初始化失败（%s），请检查 MCP、模型和 checkpoint 配置。",
                     type(exc).__name__,
                 )
             else:
@@ -74,5 +80,8 @@ async def lifespan(app: FastAPI):
         app.state.agents = None
         app.state.amap_mcp_client = None
         app.state.session_factory = None
-        if app.state.db_engine is not None:
-            await app.state.db_engine.dispose()
+        try:
+            await checkpoint_stack.aclose()
+        finally:
+            if app.state.db_engine is not None:
+                await app.state.db_engine.dispose()
