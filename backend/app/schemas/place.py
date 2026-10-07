@@ -13,6 +13,8 @@ class Place(BaseModel):
 
 
 class Candidates(BaseModel):
+    """Researcher 的结构化输出，同时保存在 TripState.candidates。"""
+
     attractions: list[Place] = Field(default_factory=list)
     restaurants: list[Place] = Field(default_factory=list)
     hotels: list[Place] = Field(default_factory=list)

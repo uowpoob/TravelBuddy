@@ -3,7 +3,6 @@ from typing import Literal, cast
 from backend.app.graph.state import TripState
 from backend.app.schemas.review import ReviewResult
 
-
 MAX_REVISIONS = 2
 
 
@@ -11,7 +10,7 @@ def route_after_understand(
     state: TripState,
 ) -> list[Literal["clarify", "researcher", "context_analyst"]]:
     """信息不足则澄清，完整则同时启动两支调研。"""
-    if state["missing_fields"]:
+    if state["missing_fields"] or state.get("clarification_question"):
         return ["clarify"]
     return ["researcher", "context_analyst"]
 

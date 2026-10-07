@@ -24,6 +24,8 @@ class EstimatedCost(BaseModel):
 
 
 class Itinerary(BaseModel):
+    """Planner 的结构化输出，同时保存在 TripState.itinerary。"""
+
     days: list[DayPlan]
     estimated_cost: EstimatedCost
     notes: list[str] = Field(default_factory=list)

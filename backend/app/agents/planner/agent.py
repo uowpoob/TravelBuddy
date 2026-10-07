@@ -8,7 +8,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from backend.app.agents.planner.tools import select_planner_tools
 from backend.app.prompts.planner import SYSTEM_PROMPT
-from backend.app.schemas.itinerary import Itinerary
+from backend.app.schemas.structured_output import Itinerary
 
 
 def build_planner_agent(

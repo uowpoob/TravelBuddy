@@ -8,7 +8,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from backend.app.agents.context_analyst.tools import select_context_analyst_tools
 from backend.app.prompts.context_analyst import SYSTEM_PROMPT
-from backend.app.schemas.trip import TravelConstraints
+from backend.app.schemas.structured_output import TravelConstraints
 
 
 def build_context_analyst_agent(

@@ -4,7 +4,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph.state import CompiledStateGraph
 
 from backend.app.prompts.reviewer import SYSTEM_PROMPT
-from backend.app.schemas.review import ReviewResult
+from backend.app.schemas.structured_output import ReviewResult
 
 
 def build_reviewer_agent(
