@@ -141,7 +141,7 @@ Reviewer 构建时不接收外部工具。角色工厂保留结构化输出和�
 travel_constraints、itinerary、review_result 和 clarification_question，
 内部模型与工具消息留在专业子图。Planner 修订时携带旧行程和审核意见。
 接口可用 `Depends(get_trip_graph)` 获取缓存总图；未就绪时返回 503。
-总图仍需实现 Confirm、Save 和修订计数，尚不能直接
+总图仍需实现 Save 和修订计数，尚不能直接
 从原始用户消息完成完整旅行流程。生命周期已接入 checkpoint，并在关闭时释放 saver。
 
 Understand 已实现：读取最新一条用户消息、已有 TripRequest、近期对话和审核意见，
@@ -162,6 +162,19 @@ Clarify 已实现动态暂停：`interrupt` 返回 JSON 问题，包含 `type="c
 可以用同一 thread 重试，不追加消息或进入 Understand。
 有效回答将问题和回答分别写入 AIMessage / HumanMessage，经既有边回到 Understand；
 若信息仍不完整，会再次暂停。
+
+Confirm 已实现行程展示与动态暂停。载荷包含 `type="confirm"`、`question`、
+`summary`、`trip_request`、`itinerary` 和 `candidates`；文本摘要依据实际地点名称、
+每日活动、停留及交通耗时、预计费用和备注生成，未知费用显示尚未估算。
+没有行程或行程天数列表为空时会报错，不能确认空方案。
+使用同一 `thread_id` 和 `Command(resume="确认")` 恢复后，完整匹配确认用语
+（如确认、同意、可以、好的、OK）时设置 `confirmed=True`，经现有路由进入 Save。
+其他非空文本作为修改反馈，设置 `confirmed=False` 并返回 Understand；
+例如 `Command(resume="第二天下午换成室内活动")`。
+回答包含“确认”但同时提出修改时不会按确认处理；空白或非文本回答校验失败，可重试。
+恢复后才将展示的方案和原始回答写入对话，让 Understand 理解修改针对的具体方案。
+Save 目前仍为空实现，进入该节点不代表已经完成业务数据库保存。
+本次 Confirm 实现按用户要求未新增或运行测试。
 
 以下代码在异步函数中运行，`graph` 为缓存主图，`context` 为 TravelBuddyContext：
 
@@ -209,7 +222,7 @@ Planner 用真实候选坐标和对应交通方式查询路线，将明确耗时
 当前客户端每次 call_tool 建立独立会话并读取工具元信息，尚未复用会话或缓存发现结果。
 build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客户端和 session 工厂缓存，
 并释放数据库引擎。核心配置模块不再在导入时实例化 Settings，模型配置延迟到创建模型时读取。
-四个专业内部节点已使用缓存 Agent；普通流程节点仍返回空更新。
+四个专业内部节点已使用缓存 Agent；Understand、Clarify 和 Confirm 已实现，Save 仍返回空更新。
 测试使用模拟模型验证结构化结果交接，不执行真实模型、天气或路线查询。
 
 ## PostgreSQL

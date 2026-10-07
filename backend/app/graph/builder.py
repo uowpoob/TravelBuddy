@@ -35,8 +35,9 @@ def build_trip_graph(
     """复用已构建的四个 Agent，组装专业子图和总图。
 
     Understand 提取与合并需求；Clarify 暂停并将回答交回 Understand。
-    Clarify 恢复需要入口传入 checkpointer，并复用同一 thread_id。
-    Confirm、Save 与修订计数仍待实现。
+    Confirm 展示行程并暂停；确认后进入 Save，修改后返回 Understand。
+    暂停恢复需要入口传入 checkpointer，并复用同一 thread_id。
+    Save 与修订计数仍待实现。
     """
     required_agents = {"researcher", "context_analyst", "planner", "reviewer"}
     missing_agents = required_agents.difference(agents)
