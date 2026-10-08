@@ -1,10 +1,26 @@
 from collections.abc import AsyncIterator
+from functools import lru_cache
+from typing import Annotated
 
-from fastapi import HTTPException, Request
+from fastapi import Depends, HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from langgraph.graph.state import CompiledStateGraph
+from pydantic import ValidationError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from backend.app.core.config import AuthSettings
+from backend.app.core.security import (
+    AuthConfigurationError,
+    InvalidAccessToken,
+    access_token_user_id,
+    require_auth_configuration,
+)
 from backend.app.integrations.mcp import AmapMCPClient
+from backend.app.models import User
+from backend.app.repositories.users import UserRepository
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
@@ -13,6 +29,47 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
         raise HTTPException(status_code=503, detail="Database not configured")
     async with factory() as session:
         yield session
+
+
+@lru_cache(maxsize=1)
+def get_auth_settings() -> AuthSettings:
+    try:
+        settings = AuthSettings()
+        require_auth_configuration(settings)
+    except (ValidationError, AuthConfigurationError):
+        raise HTTPException(
+            status_code=503, detail="登录配置未就绪，请配置认证密钥并重启服务。"
+        ) from None
+    return settings
+
+
+def authentication_error(detail: str = "登录凭证无效或已过期。") -> HTTPException:
+    return HTTPException(
+        status_code=401, detail=detail, headers={"WWW-Authenticate": "Bearer"}
+    )
+
+
+async def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    settings: Annotated[AuthSettings, Depends(get_auth_settings)],
+) -> User:
+    """从签名令牌确定身份并查询用户，后续业务接口可复用该依赖。"""
+    if credentials is None:
+        raise authentication_error("请先登录。")
+    try:
+        user_id = access_token_user_id(credentials.credentials, settings)
+    except InvalidAccessToken:
+        raise authentication_error() from None
+    try:
+        user = await UserRepository(session).get_by_id(user_id)
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="数据库暂时不可用，请稍后重试。"
+        ) from None
+    if user is None:
+        raise authentication_error()
+    return user
 
 
 def get_amap_mcp_client(request: Request) -> AmapMCPClient:
