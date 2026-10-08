@@ -228,7 +228,14 @@ build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客�
 ## PostgreSQL
 
 业务数据使用 SQLAlchemy 访问，业务表变更使用 Alembic 管理；LangGraph 检查点由
-`langgraph-checkpoint-postgres` 单独管理。当前还没有业务表或业务迁移版本。
+`langgraph-checkpoint-postgres` 单独管理。已定义三张业务表：
+
+- `users`：用户账号、唯一用户名、密码哈希和时间戳。
+- `conversations`：用户的聊天会话，UUID 的字符串形式作为 LangGraph `thread_id`。
+- `itineraries`：用户确认后的行程版本，保存需求、行程和地点信息的 JSONB 快照。
+
+首个迁移版本为 `118ebaead2fc`，完整字段、约束和后续 Save 接入说明见
+[DATABASE.md](docs/DATABASE.md)。当前仅完成表结构，注册登录、会话 API 和 Save 写入仍待实现。
 
 本地 `.env` 的 `DATABASE_DSN` 指向独立的 `travelbuddy` 数据库。
 连接账号可复用现有本地 PostgreSQL 账号，但不要指向其他项目的数据库。
@@ -261,7 +268,8 @@ uv run python -m backend.scripts.init_checkpoints
 
 `/health` 仅检查 API 进程；`/health/db` 检查数据库连通性，不检查业务表是否齐全。
 Alembic 自动生成迁移只检查已注册的业务模型，避免删除 checkpoint 表。
-新增模型后需在 `backend/migrations/env.py` 导入，生成并人工检查迁移文件后再应用；
+新增模型后需在 `backend/app/models/__init__.py` 导入；迁移环境统一加载该包，
+生成并人工检查迁移文件后再应用；
 删除业务表需要编写显式迁移。
 
 ```powershell
@@ -269,6 +277,10 @@ uv run alembic revision --autogenerate -m "describe change"
 uv run alembic upgrade head
 uv run pytest backend/tests
 ```
+
+业务模型的真实 PostgreSQL 集成测试位于 `backend/tests/db/test_business_models.py`。
+设置 `TRAVELBUDDY_TEST_DATABASE_DSN` 指向已迁移的 PostgreSQL 测试库后运行；未设置则跳过。
+每个测试用外层事务回滚写入的业务记录，不调用模型、高德或 checkpoint 写入。
 
 开发计划见 [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)。当前已搭建最小后端与健康检查，尚未实现业务功能。
 
