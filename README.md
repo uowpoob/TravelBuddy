@@ -38,6 +38,19 @@ uv run python -m backend --reload
 健康检查返回 HTTP 200 和 `{"status":"ok","service":"TravelBuddy"}`。
 此接口只检查 API 进程是否正常响应，不调用模型或高德服务。
 
+## 在终端测试旅行图
+
+不启动前端或 HTTP 服务，直接输入需求、回答澄清问题、确认并保存：
+
+```powershell
+uv run python -m backend.scripts.trip_chat --message "想去杭州"
+```
+
+默认创建本地调试用户和会话；实际调用已配置的模型和高德 MCP。
+终端显示节点进度、工具名称、确认方案和已保存 ID/版本；支持 `/state`、`/retry`、`/quit`。
+配置 PostgreSQL checkpoint 后可使用用户 ID 和会话 ID 重新打开并恢复。
+完整准备步骤、单轮运行及 PyCharm 配置见 [GRAPH_DEBUG.md](docs/GRAPH_DEBUG.md)。
+
 ## 本地调用高德 MCP
 
 后端的 `backend/app/integrations/mcp/` 通过 Streamable HTTP 直接连接高德 MCP。
@@ -141,8 +154,8 @@ Reviewer 构建时不接收外部工具。角色工厂保留结构化输出和�
 travel_constraints、itinerary、review_result 和 clarification_question，
 内部模型与工具消息留在专业子图。Planner 修订时携带旧行程和审核意见。
 接口可用 `Depends(get_trip_graph)` 获取缓存总图；未就绪时返回 503。
-总图仍需实现 Save 和修订计数，尚不能直接
-从原始用户消息完成完整旅行流程。生命周期已接入 checkpoint，并在关闭时释放 saver。
+Save 已接入业务数据库，审核自动修订最多两轮；旅行运行/恢复 HTTP 接口仍待实现。
+生命周期已接入 checkpoint，并在关闭时释放 saver。
 
 Understand 已实现：读取最新一条用户消息、已有 TripRequest、近期对话和审核意见，
 通过结构化模型提取本轮更新的字段，再由 Python 合并需求与检查必填项。
@@ -173,7 +186,14 @@ Confirm 已实现行程展示与动态暂停。载荷包含 `type="confirm"`、`
 例如 `Command(resume="第二天下午换成室内活动")`。
 回答包含“确认”但同时提出修改时不会按确认处理；空白或非文本回答校验失败，可重试。
 恢复后才将展示的方案和原始回答写入对话，让 Understand 理解修改针对的具体方案。
-Save 目前仍为空实现，进入该节点不代表已经完成业务数据库保存。
+Save 已实现：确认后检查完整需求、行程天数和地点引用，并验证会话属于当前用户，
+在数据库事务中保存需求、行程、候选地点及可选约束/审核快照。
+Planner 完成方案时生成 `save_key` 并写入 State；Confirm 暂停和 Save 重试复用该标识。
+同一会话的同一标识返回已有记录，内容不同则拒绝覆盖；新标识保存为下一个版本。
+会话行锁保护并发版本分配，提交成功后回写 `saved_itinerary_id` 和 `saved_itinerary_version`。
+保存需要已有的用户、UUID 会话，以及 `TravelBuddyContext.db` 中专供 Save、未开启事务的
+`AsyncSession`；预览和澄清阶段可以不传 db。没有数据库、未确认或数据无效时明确报错。
+完整事务、恢复和测试说明见 [DATABASE.md](docs/DATABASE.md#save-接入)。
 本次 Confirm 实现按用户要求未新增或运行测试。
 
 以下代码在异步函数中运行，`graph` 为缓存主图，`context` 为 TravelBuddyContext：
@@ -222,7 +242,7 @@ Planner 用真实候选坐标和对应交通方式查询路线，将明确耗时
 当前客户端每次 call_tool 建立独立会话并读取工具元信息，尚未复用会话或缓存发现结果。
 build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客户端和 session 工厂缓存，
 并释放数据库引擎。核心配置模块不再在导入时实例化 Settings，模型配置延迟到创建模型时读取。
-四个专业内部节点已使用缓存 Agent；Understand、Clarify 和 Confirm 已实现，Save 仍返回空更新。
+四个专业内部节点已使用缓存 Agent；Understand、Clarify、Confirm 和 Save 已实现。
 测试使用模拟模型验证结构化结果交接，不执行真实模型、天气或路线查询。
 
 ## PostgreSQL
@@ -234,8 +254,9 @@ build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客�
 - `conversations`：用户的聊天会话，UUID 的字符串形式作为 LangGraph `thread_id`。
 - `itineraries`：用户确认后的行程版本，保存需求、行程和地点信息的 JSONB 快照。
 
-首个迁移版本为 `118ebaead2fc`，完整字段、约束和后续 Save 接入说明见
-[DATABASE.md](docs/DATABASE.md)。当前仅完成表结构，注册登录、会话 API 和 Save 写入仍待实现。
+首个迁移版本为 `118ebaead2fc`；最新版本 `c6a1e7d4b930` 为行程增加 `save_key`
+和会话内唯一约束。完整字段、约束和 Save 接入说明见
+[DATABASE.md](docs/DATABASE.md)。Save 已实现，注册登录、会话及旅行业务 API 仍待实现。
 
 本地 `.env` 的 `DATABASE_DSN` 指向独立的 `travelbuddy` 数据库。
 连接账号可复用现有本地 PostgreSQL 账号，但不要指向其他项目的数据库。
@@ -259,7 +280,8 @@ uv run python -m backend.scripts.init_checkpoints
 ```
 
 检查点脚本在内存模式下会提示并跳过；PostgreSQL 模式仍由该脚本显式建表或升级表结构。
-检查点已接入应用生命周期和旅行主图；真实 PostgreSQL 重启恢复尚未运行验证。
+检查点已接入应用生命周期和旅行主图。CLI 已用模拟 Agent 验证新图/saver 实例
+从真实 PostgreSQL checkpoint 恢复到确认并保存；真实模型/高德全流程和进程崩溃恢复仍待验证。
 
 修改 `.env` 后重启后端。访问 `/health/db` 会执行 `SELECT 1`：
 
@@ -281,6 +303,9 @@ uv run pytest backend/tests
 业务模型的真实 PostgreSQL 集成测试位于 `backend/tests/db/test_business_models.py`。
 设置 `TRAVELBUDDY_TEST_DATABASE_DSN` 指向已迁移的 PostgreSQL 测试库后运行；未设置则跳过。
 每个测试用外层事务回滚写入的业务记录，不调用模型、高德或 checkpoint 写入。
+Save 集成测试位于 `backend/tests/db/test_save.py`，验证真实提交、并发、幂等与失败恢复；
+它会创建临时用户和会话，并在结束时按生成的精确 ID 清理记录。两组都可用
+`uv run pytest backend/tests/db -q` 运行。图流程测试使用模拟 Agent，不调用真实模型或高德。
 
 开发计划见 [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)。当前已搭建最小后端与健康检查，尚未实现业务功能。
 

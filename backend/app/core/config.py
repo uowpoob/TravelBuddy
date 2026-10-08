@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     DEEPSEEK_API_KEY: str
     DEEPSEEK_BASE_URL: str
-    DEEPSEEK_MODEL: str = "deepseek-v4.1-flash"
+    DEEPSEEK_MODEL: str = "deepseek-flash"
 
 
     GD_API_KEY: SecretStr = SecretStr("")

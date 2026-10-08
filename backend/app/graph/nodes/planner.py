@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.runtime import Runtime
@@ -31,5 +33,16 @@ class PlannerNode:
         result = await self.agent.ainvoke(
             agent_input, config=config, context=runtime.context
         )
-        # 内部消息留在子图；修订计数逻辑后续实现。
-        return {"itinerary": result["itinerary"]}
+        # 初次规划不计为修订；仅 Reviewer 要求 revise 时累加。
+        revision_count = state.get("revision_count", 0)
+        if review is not None and review.decision == "revise":
+            revision_count += 1
+        # 与方案一起进入 checkpoint；Confirm/Save 重试不能重新生成保存标识。
+        return {
+            "itinerary": result["itinerary"],
+            "revision_count": revision_count,
+            "save_key": str(uuid4()),
+            "confirmed": False,
+            "saved_itinerary_id": None,
+            "saved_itinerary_version": None,
+        }

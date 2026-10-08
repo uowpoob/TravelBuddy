@@ -13,6 +13,7 @@ class TripState(MessagesState, total=False):
     Understand 初始化或重置 revision_count=0、confirmed=False。
     Confirm 根据用户对当前方案的回答更新 confirmed。
     Agent 的内部 messages 留在各自子图，主图只接收其业务结果。
+    Planner 为当前方案生成 save_key；Save 重试复用它，并回写已保存记录及版本。
     """
 
     trip_request: TripRequest
@@ -28,4 +29,6 @@ class TripState(MessagesState, total=False):
     review_result: ReviewResult | None
     revision_count: int
     confirmed: bool
+    save_key: str | None
     saved_itinerary_id: int | None
+    saved_itinerary_version: int | None

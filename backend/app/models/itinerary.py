@@ -24,13 +24,15 @@ class SavedItinerary(Base):
 
     trip_request / itinerary / candidates 保存业务模型的 JSON 数据。
     candidates 保留 place_id 对应的名称、地址和坐标，供独立展示行程。
-    version 是进入 Save 前确定的业务版本，不使用 State.revision_count。
+    save_key 在 Planner 完成时写入 State，保存重试时保持不变。
+    version 在 Save 的事务中按会话递增分配，不使用 State.revision_count。
     用户归属通过 conversation_id -> conversations.user_id 获取。
     """
 
     __tablename__ = "itineraries"
     __table_args__ = (
         UniqueConstraint("conversation_id", "version"),
+        UniqueConstraint("conversation_id", "save_key"),
         CheckConstraint("version >= 1", name="version_positive"),
         CheckConstraint("days BETWEEN 1 AND 5", name="days_range"),
         CheckConstraint("length(btrim(title)) > 0", name="title_not_blank"),
@@ -57,6 +59,9 @@ class SavedItinerary(Base):
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
     conversation_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False), ForeignKey("conversations.id", ondelete="RESTRICT")
+    )
+    save_key: Mapped[str] = mapped_column(
+        UUID(as_uuid=False), server_default=func.gen_random_uuid()
     )
     version: Mapped[int] = mapped_column(Integer)
     title: Mapped[str] = mapped_column(Text)
