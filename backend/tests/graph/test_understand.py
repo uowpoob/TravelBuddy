@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.output_parsers import PydanticOutputParser
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.runtime import Runtime
@@ -252,8 +253,9 @@ async def test_latest_human_message_and_processed_message_guard(
 class UnderstandingModel(FakeMessagesListChatModel):
     _inputs: list = PrivateAttr(default_factory=list)
 
-    def bind_tools(self, tools, *, tool_choice=None, **kwargs):
-        return self
+    def with_structured_output(self, schema, *, method, **kwargs):
+        assert method == "json_mode"
+        return self | PydanticOutputParser(pydantic_object=schema)
 
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         self._inputs.append(messages)
@@ -262,16 +264,7 @@ class UnderstandingModel(FakeMessagesListChatModel):
 
 def understanding_response(**values):
     response = RequestUnderstanding(**values)
-    return AIMessage(
-        content="",
-        tool_calls=[
-            {
-                "name": "RequestUnderstanding",
-                "id": "extraction",
-                "args": response.model_dump(mode="json"),
-            }
-        ],
-    )
+    return AIMessage(content=response.model_dump_json())
 
 
 @pytest.mark.asyncio

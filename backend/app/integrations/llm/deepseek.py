@@ -9,7 +9,7 @@ chat_model = init_chat_model(
     model_provider="deepseek",
     api_key=settings.DEEPSEEK_API_KEY,
     api_base=settings.DEEPSEEK_BASE_URL,
-    # Understand 指定函数，四个 Agent 的 ToolStrategy 强制调用工具。
-    # DeepSeek 思考模式不支持这两种 tool_choice；统一使用非思考模式。
+    # 四个 Agent 的 ToolStrategy 强制调用工具；DeepSeek 思考模式
+    # 不支持 required/named tool_choice，统一使用非思考模式。
     extra_body={"thinking": {"type": "disabled"}},
 )
