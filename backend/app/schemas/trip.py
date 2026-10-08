@@ -3,6 +3,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+REQUIRED_FIELDS = {
+    "destination_city": "目的地城市",
+    "start_date": "出行日期",
+    "days": "旅行天数（1–5 天）",
+    "travelers": "出行人数",
+    "transport": "交通方式或允许的交通方式",
+}
+
 
 class TripRequest(BaseModel):
     """共享业务需求，保存在 TripState.trip_request；也是 Understand 输出的内部数据。
@@ -31,6 +39,14 @@ class TripRequest(BaseModel):
 class WeatherInfo(BaseModel):
     date: date
     description: str
+
+
+def missing_request_fields(request: TripRequest) -> list[str]:
+    """Understand 与保存服务共用的完整需求检查。"""
+    missing = [field for field in REQUIRED_FIELDS if not getattr(request, field)]
+    if request.budget is not None and request.budget_scope is None:
+        missing.append("budget_scope")
+    return missing
 
 
 class TravelConstraints(BaseModel):

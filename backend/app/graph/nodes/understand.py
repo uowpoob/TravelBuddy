@@ -11,22 +11,12 @@ from backend.app.graph.state import TripState
 from backend.app.prompts.understand import SYSTEM_PROMPT
 from backend.app.schemas.place import Candidates
 from backend.app.schemas.structured_output import RequestUnderstanding
-from backend.app.schemas.trip import TravelConstraints, TripRequest
-
-REQUIRED_FIELDS = {
-    "destination_city": "目的地城市",
-    "start_date": "出行日期",
-    "days": "旅行天数（1–5 天）",
-    "travelers": "出行人数",
-    "transport": "交通方式或允许的交通方式",
-}
-
-
-def missing_request_fields(request: TripRequest) -> list[str]:
-    missing = [field for field in REQUIRED_FIELDS if not getattr(request, field)]
-    if request.budget is not None and request.budget_scope is None:
-        missing.append("budget_scope")
-    return missing
+from backend.app.schemas.trip import (
+    REQUIRED_FIELDS,
+    TravelConstraints,
+    TripRequest,
+    missing_request_fields,
+)
 
 
 def missing_fields_question(fields: list[str]) -> str:
@@ -125,5 +115,7 @@ class UnderstandNode:
             "review_result": None,
             "revision_count": 0,
             "confirmed": False,
+            "save_key": None,
             "saved_itinerary_id": None,
+            "saved_itinerary_version": None,
         }
