@@ -2,12 +2,12 @@ import asyncio
 
 from alembic import context
 
+from backend.app import models  # noqa: F401 -- register business tables
 from backend.app.core.config import Settings
 from backend.app.core.runtime import loop_factory
 from backend.app.db.base import Base
 from backend.app.db.session import create_engine
 
-# Import business models here as they are added to the project.
 target_metadata = Base.metadata
 
 
