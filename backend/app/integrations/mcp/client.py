@@ -132,7 +132,7 @@ class AmapMCPClient:
         if not name.strip():
             raise ValueError("工具名称不能为空。")
         async with self._session() as session:
-            tools = await self._list_tools(session)
-            if not any(tool.name == name for tool in tools):
-                raise AmapMCPError(f"高德 MCP 未提供工具：{name}")
+        #     tools = await self._list_tools(session)
+        #     if not any(tool.name == name for tool in tools):
+        #         raise AmapMCPError(f"高德 MCP 未提供工具：{name}")
             return await session.call_tool(name, arguments=arguments or {})

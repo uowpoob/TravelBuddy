@@ -12,8 +12,8 @@ from backend.app.graph.state import TripState
 class PlannerNode:
     """调用规划子图，传入调研结果与可选的修订信息。"""
 
-    def __init__(self, agent: CompiledStateGraph):
-        self.agent = agent
+    def __init__(self, graph: CompiledStateGraph):
+        self.graph = graph
 
     async def __call__(
         self,
@@ -22,7 +22,7 @@ class PlannerNode:
         config: RunnableConfig,
     ) -> dict[str, object]:
         review = state.get("review_result")
-        agent_input: PlannerState = {
+        graph_input: PlannerState = {
             "messages": [],
             "trip_request": state["trip_request"],
             "candidates": state["candidates"],
@@ -30,8 +30,8 @@ class PlannerNode:
             "review_result": review,
             "itinerary": state.get("itinerary"),
         }
-        result = await self.agent.ainvoke(
-            agent_input, config=config, context=runtime.context
+        result = await self.graph.ainvoke(
+            graph_input, config=config, context=runtime.context
         )
         # 初次规划不计为修订；仅 Reviewer 要求 revise 时累加。
         revision_count = state.get("revision_count", 0)

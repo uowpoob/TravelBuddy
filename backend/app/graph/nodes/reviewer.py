@@ -10,8 +10,8 @@ from backend.app.graph.state import TripState
 class ReviewerNode:
     """调用审核子图，只将审核结论与澄清问题交回主图。"""
 
-    def __init__(self, agent: CompiledStateGraph):
-        self.agent = agent
+    def __init__(self, graph: CompiledStateGraph):
+        self.graph = graph
 
     async def __call__(
         self,
@@ -19,7 +19,7 @@ class ReviewerNode:
         runtime: Runtime[TravelBuddyContext],
         config: RunnableConfig,
     ) -> dict[str, object]:
-        agent_input: ReviewerState = {
+        graph_input: ReviewerState = {
             "messages": [],
             "trip_request": state["trip_request"],
             "candidates": state["candidates"],
@@ -28,8 +28,8 @@ class ReviewerNode:
             # 确定性的业务规则检查尚未实现。
             "rule_issues": [],
         }
-        result = await self.agent.ainvoke(
-            agent_input, config=config, context=runtime.context
+        result = await self.graph.ainvoke(
+            graph_input, config=config, context=runtime.context
         )
         # 内部消息留在子图，主图仅接收业务结果。
         return {

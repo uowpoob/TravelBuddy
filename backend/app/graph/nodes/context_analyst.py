@@ -10,8 +10,8 @@ from backend.app.graph.state import TripState
 class ContextAnalystNode:
     """调用出行约束子图，只将约束结果交回主图。"""
 
-    def __init__(self, agent: CompiledStateGraph):
-        self.agent = agent
+    def __init__(self, graph: CompiledStateGraph):
+        self.graph = graph
 
     async def __call__(
         self,
@@ -19,12 +19,12 @@ class ContextAnalystNode:
         runtime: Runtime[TravelBuddyContext],
         config: RunnableConfig,
     ) -> dict[str, object]:
-        agent_input: ContextAnalystState = {
+        graph_input: ContextAnalystState = {
             "messages": [],
             "trip_request": state["trip_request"],
         }
-        result = await self.agent.ainvoke(
-            agent_input, config=config, context=runtime.context
+        result = await self.graph.ainvoke(
+            graph_input, config=config, context=runtime.context
         )
         # 内部消息留在子图，主图仅接收结构化约束。
         return {"travel_constraints": result["travel_constraints"]}
