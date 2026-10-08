@@ -49,14 +49,20 @@ def build_trip_graph(
     builder.add_node("understand", UnderstandNode(understand_model))
     builder.add_node("clarify", ClarifyNode())
     builder.add_node(
-        "researcher", ResearcherNode(build_researcher_graph(agents["researcher"]))
+        "researcher", ResearcherNode(graph=build_researcher_graph(agents["researcher"]))
     )
     builder.add_node(
         "context_analyst",
-        ContextAnalystNode(build_context_analyst_graph(agents["context_analyst"])),
+        ContextAnalystNode(
+            graph=build_context_analyst_graph(agents["context_analyst"])
+        ),
     )
-    builder.add_node("planner", PlannerNode(build_planner_graph(agents["planner"])))
-    builder.add_node("reviewer", ReviewerNode(build_reviewer_graph(agents["reviewer"])))
+    builder.add_node(
+        "planner", PlannerNode(graph=build_planner_graph(agents["planner"]))
+    )
+    builder.add_node(
+        "reviewer", ReviewerNode(graph=build_reviewer_graph(agents["reviewer"]))
+    )
     builder.add_node("confirm", ConfirmNode())
     builder.add_node("save", SaveNode())
 

@@ -10,8 +10,8 @@ from backend.app.graph.state import TripState
 class ResearcherNode:
     """调用地点调研子图，只将候选地点交回主图。"""
 
-    def __init__(self, agent: CompiledStateGraph):
-        self.agent = agent
+    def __init__(self, graph: CompiledStateGraph):
+        self.graph = graph
 
     async def __call__(
         self,
@@ -19,12 +19,12 @@ class ResearcherNode:
         runtime: Runtime[TravelBuddyContext],
         config: RunnableConfig,
     ) -> dict[str, object]:
-        agent_input: ResearcherState = {
+        graph_input: ResearcherState = {
             "messages": [],
             "trip_request": state["trip_request"],
         }
-        result = await self.agent.ainvoke(
-            agent_input, config=config, context=runtime.context
+        result = await self.graph.ainvoke(
+            graph_input, config=config, context=runtime.context
         )
         # 内部消息留在子图，主图仅接收候选地点。
         return {"candidates": result["candidates"]}
