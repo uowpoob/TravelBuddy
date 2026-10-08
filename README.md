@@ -38,6 +38,15 @@ uv run python -m backend --reload
 健康检查返回 HTTP 200 和 `{"status":"ok","service":"TravelBuddy"}`。
 此接口只检查 API 进程是否正常响应，不调用模型或高德服务。
 
+## 注册与登录
+
+已实现 `POST /api/v1/auth/register`、`POST /api/v1/auth/login` 和
+`GET /api/v1/auth/me`，复用现有 users 表。密码只保存加盐哈希，登录返回 Bearer JWT。
+本地签名密钥初始化命令为 `uv run python -m backend.scripts.init_auth`，已有密钥不会被覆盖。
+默认令牌有效期 60 分钟，修改 .env 后需重启后端。
+可在 `/docs` 中注册、登录并使用 Authorize 调用 me。
+请求格式、返回字段和后续接口鉴权方式见 [AUTH.md](docs/AUTH.md)。
+
 ## 在终端测试旅行图
 
 不启动前端或 HTTP 服务，直接输入需求、回答澄清问题、确认并保存：
@@ -256,7 +265,7 @@ build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客�
 
 首个迁移版本为 `118ebaead2fc`；最新版本 `c6a1e7d4b930` 为行程增加 `save_key`
 和会话内唯一约束。完整字段、约束和 Save 接入说明见
-[DATABASE.md](docs/DATABASE.md)。Save 已实现，注册登录、会话及旅行业务 API 仍待实现。
+[DATABASE.md](docs/DATABASE.md)。Save 和注册登录已实现，会话及旅行业务 API 仍待实现。
 
 本地 `.env` 的 `DATABASE_DSN` 指向独立的 `travelbuddy` 数据库。
 连接账号可复用现有本地 PostgreSQL 账号，但不要指向其他项目的数据库。

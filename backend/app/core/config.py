@@ -2,14 +2,26 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from psycopg.conninfo import conninfo_to_dict
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 load_dotenv(PROJECT_ROOT / ".env", override=False)
+
+
+class AuthSettings(BaseSettings):
+    """认证配置独立于模型和高德配置，密钥由部署环境提供。"""
+
+    model_config = SettingsConfigDict(
+        env_file=PROJECT_ROOT / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    AUTH_SECRET_KEY: SecretStr = SecretStr("")
+    AUTH_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60, ge=1, le=1440)
 
 
 class Settings(BaseSettings):
@@ -25,7 +37,6 @@ class Settings(BaseSettings):
     DEEPSEEK_API_KEY: str
     DEEPSEEK_BASE_URL: str
     DEEPSEEK_MODEL: str = "deepseek-flash"
-
 
     GD_API_KEY: SecretStr = SecretStr("")
     GD_JSAPI_KEY: str = ""
@@ -48,4 +59,3 @@ class Settings(BaseSettings):
             database=params.pop("dbname", None),
             query=params,
         )
-
