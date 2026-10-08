@@ -1,10 +1,13 @@
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.runtime import Runtime
+from pydantic import ValidationError
 
 from backend.app.graph.context import TravelBuddyContext
 from backend.app.graph.state import TripState
@@ -17,6 +20,8 @@ from backend.app.schemas.trip import (
     TripRequest,
     missing_request_fields,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def missing_fields_question(fields: list[str]) -> str:
@@ -73,17 +78,27 @@ class UnderstandNode:
                 ],
                 "latest_user_message": latest.content,
                 "review_result": review.model_dump(mode="json") if review else None,
+                "output_schema": RequestUnderstanding.model_json_schema(),
             }
-            extracted = await self.model.with_structured_output(
-                RequestUnderstanding
-            ).ainvoke(
-                [
-                    SystemMessage(content=SYSTEM_PROMPT),
-                    HumanMessage(content=json.dumps(payload, ensure_ascii=False)),
-                ],
-                config=config,
+            # 此节点只提取数据，使用 JSON 输出避免强制工具调用及无效函数参数。
+            extractor = self.model.with_structured_output(
+                RequestUnderstanding, method="json_mode"
             )
-            understanding = RequestUnderstanding.model_validate(extracted)
+            prompt = [
+                SystemMessage(content=SYSTEM_PROMPT),
+                HumanMessage(content=json.dumps(payload, ensure_ascii=False)),
+            ]
+            for attempt in range(2):
+                try:
+                    extracted = await extractor.ainvoke(prompt, config=config)
+                    understanding = RequestUnderstanding.model_validate(extracted)
+                    break
+                except (OutputParserException, ValidationError) as exc:
+                    if attempt == 1:
+                        raise
+                    logger.warning(
+                        "需求输出校验失败，重试一次（%s）。", type(exc).__name__
+                    )
             new_trip = understanding.new_trip
             base = TripRequest() if new_trip else current
             updates = {
