@@ -19,6 +19,8 @@ class ContextAnalystNode:
         runtime: Runtime[TravelBuddyContext],
         config: RunnableConfig,
     ) -> dict[str, object]:
+        if state.get("context_required") is False:
+            return {}
         graph_input: ContextAnalystState = {
             "messages": [],
             "trip_request": state["trip_request"],
@@ -27,4 +29,7 @@ class ContextAnalystNode:
             graph_input, config=config, context=runtime.context
         )
         # 内部消息留在子图，主图仅接收结构化约束。
-        return {"travel_constraints": result["travel_constraints"]}
+        return {
+            "travel_constraints": result["travel_constraints"],
+            "context_required": False,
+        }

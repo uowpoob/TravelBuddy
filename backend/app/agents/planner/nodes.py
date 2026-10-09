@@ -24,6 +24,21 @@ class PlanNode:
     ) -> dict[str, object]:
         review = state.get("review_result")
         itinerary = state.get("itinerary")
+        source = state.get("itinerary_request")
+        if (
+            itinerary is not None
+            and source is not None
+            and any(
+                getattr(source, field) != getattr(state["trip_request"], field)
+                for field in ("destination_city", "start_date", "transport")
+            )
+        ):
+            # 保留旧地点顺序作为修改依据，但不沿用其他日期/交通方式下的耗时。
+            itinerary = itinerary.model_copy(deep=True)
+            for day in itinerary.days:
+                for visit in day.visits:
+                    visit.transport = None
+                    visit.travel_minutes = None
         payload = {
             "trip_request": state["trip_request"].model_dump(mode="json"),
             "candidates": state["candidates"].model_dump(mode="json"),
@@ -31,9 +46,17 @@ class PlanNode:
             "review_result": review.model_dump(mode="json") if review else None,
             "itinerary": itinerary.model_dump(mode="json") if itinerary else None,
         }
+        if "revision_request" in state:
+            payload["revision_request"] = state.get("revision_request")
+            payload["changed_fields"] = state.get("changed_fields", [])
+            payload["previous_trip_request"] = (
+                source.model_dump(mode="json") if source else None
+            )
         message = HumanMessage(content=json.dumps(payload, ensure_ascii=False))
         result = await self.agent.ainvoke(
-            {"messages": [message]}, config=config, context=runtime.context
+            {"messages": [message]},
+            config=config,
+            context=runtime.context,
         )
         return {
             "messages": result["messages"],

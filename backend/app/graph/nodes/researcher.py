@@ -5,6 +5,7 @@ from langgraph.runtime import Runtime
 from backend.app.agents.researcher.state import ResearcherState
 from backend.app.graph.context import TravelBuddyContext
 from backend.app.graph.state import TripState
+from backend.app.schemas.place import Candidates
 
 
 class ResearcherNode:
@@ -19,12 +20,40 @@ class ResearcherNode:
         runtime: Runtime[TravelBuddyContext],
         config: RunnableConfig,
     ) -> dict[str, object]:
+        if state.get("research_required") is False:
+            return {}
         graph_input: ResearcherState = {
             "messages": [],
             "trip_request": state["trip_request"],
         }
+        previous = state.get("candidates")
         result = await self.graph.ainvoke(
             graph_input, config=config, context=runtime.context
         )
         # 内部消息留在子图，主图仅接收候选地点。
-        return {"candidates": result["candidates"]}
+        candidates = result["candidates"].model_copy(deep=True)
+        # 旧行程仍可能引用原候选。保留其真实地点数据，Planner 决定是否继续安排。
+        if previous is not None and state.get("itinerary") is not None:
+            used_ids = {
+                visit.place_id
+                for day in state["itinerary"].days
+                for visit in day.visits
+            }
+            seen = {
+                place.id
+                for places in (
+                    candidates.attractions,
+                    candidates.restaurants,
+                    candidates.hotels,
+                )
+                for place in places
+            }
+            for category in Candidates.model_fields:
+                for place in getattr(previous, category):
+                    if place.id in used_ids and place.id not in seen:
+                        getattr(candidates, category).append(place)
+                        seen.add(place.id)
+        return {
+            "candidates": candidates,
+            "research_required": False,
+        }

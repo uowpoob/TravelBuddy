@@ -78,7 +78,7 @@ def build_trip_graph(
     )
     builder.add_edge("clarify", "understand")
 
-    # 等两支调研全部完成，再调用 Planner。
+    # 两支调研自行跳过仍有效的数据；统一汇合，避免只刷新一支时重复调用 Planner。
     builder.add_edge(["researcher", "context_analyst"], "planner")
     builder.add_edge("planner", "reviewer")
     builder.add_conditional_edges(

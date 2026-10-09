@@ -49,3 +49,10 @@ class RequestUnderstanding(BaseModel):
     clarification_question: str | None = Field(
         default=None, description="存在歧义或冲突时询问用户；没有时为 null。"
     )
+    refresh_candidates: bool = Field(
+        default=False,
+        description="修改需要查询旧候选之外的新地点，或用户明确要求重新查地点时为 true。",
+    )
+    refresh_weather: bool = Field(
+        default=False, description="用户明确要求重新查询天气时为 true。"
+    )
