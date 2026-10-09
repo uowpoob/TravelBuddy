@@ -103,11 +103,14 @@ export function ItineraryPreview({
         </div>
       )}
       {itinerary.notes.length > 0 && (
-        <ul className="itinerary-notes">
-          {itinerary.notes.map((note, index) => (
-            <li key={index}>{note}</li>
-          ))}
-        </ul>
+        <div className="itinerary-reminders">
+          <h3>行程提醒</h3>
+          <ul className="itinerary-notes">
+            {itinerary.notes.map((note, index) => (
+              <li key={index}>{note}</li>
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   )

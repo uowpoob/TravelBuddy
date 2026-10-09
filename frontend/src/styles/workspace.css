@@ -700,6 +700,61 @@
   gap: 20px;
   margin-top: 20px;
 }
+.recent-conversations {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+}
+.recent-conversations li + li {
+  border-top: 1px solid var(--border);
+}
+.recent-conversation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border-radius: 8px;
+}
+.recent-conversation:hover {
+  background: #f7f9f3;
+}
+.recent-conversation-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--soft-green);
+  color: var(--primary);
+}
+.recent-conversation-copy {
+  flex: 1;
+  min-width: 0;
+}
+.recent-conversation-copy strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 500;
+}
+.recent-conversation-copy > span {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.recent-conversation-action {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  color: var(--primary);
+  font-size: 11px;
+}
+.recent-conversations-error {
+  padding-bottom: 8px;
+}
 .trip-empty {
   display: flex;
   align-items: center;

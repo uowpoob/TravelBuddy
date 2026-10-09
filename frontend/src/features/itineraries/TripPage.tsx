@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, LoaderCircle, MessageCircle, RefreshCw } from 'lucide-react'
+import { ArrowLeft, LoaderCircle, Map, MessageCircle, RefreshCw } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { ApiError } from '../../api/auth'
 import { itinerariesApi } from '../../api/itineraries'
@@ -76,6 +76,9 @@ export function TripPage() {
       )}
       {item && (
         <>
+          <Link className="button button-secondary" to={`/app/map?itinerary=${item.id}`}>
+            <Map size={16} /> 在地图上查看行程
+          </Link>
           <Link
             className="button button-secondary"
             to={`/app/conversations/${item.conversation_id}`}

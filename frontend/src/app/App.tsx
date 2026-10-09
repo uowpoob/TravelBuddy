@@ -9,12 +9,8 @@ import { ConversationPage } from '../features/conversations/ConversationPage'
 import { DashboardPage } from '../features/planner/DashboardPage'
 import { TripsPage } from '../features/itineraries/TripsPage'
 import { TripPage } from '../features/itineraries/TripPage'
-import {
-  ExplorePage,
-  MapPage,
-  SettingsPage,
-  WorkflowPage,
-} from '../features/planner/WorkspacePages'
+import { MapPage } from '../features/maps/MapPage'
+import { ExplorePage, SettingsPage, WorkflowPage } from '../features/planner/WorkspacePages'
 
 function ProtectedRoute() {
   const { status } = useAuth()

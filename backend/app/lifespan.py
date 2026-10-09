@@ -7,10 +7,11 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from backend.app.agents.builder import build_agents
-from backend.app.core.config import Settings
+from backend.app.core.config import MapSettings, Settings
 from backend.app.db.session import create_engine
 from backend.app.graph.builder import build_trip_graph
 from backend.app.graph.checkpoints import open_checkpointer
+from backend.app.integrations.amap_routes import AmapRouteClient
 from backend.app.integrations.mcp import AmapMCPClient, AmapMCPError, AmapMCPSettings
 
 logger = logging.getLogger(__name__)
@@ -23,9 +24,14 @@ async def lifespan(app: FastAPI):
     app.state.amap_mcp_client = None
     app.state.agents = None
     app.state.trip_graph = None
+    app.state.amap_route_client = None
     settings: Settings | None = None
     checkpoint_stack = AsyncExitStack()
     try:
+        try:
+            app.state.amap_route_client = AmapRouteClient(MapSettings())
+        except ValidationError:
+            logger.warning("地图配置无效，地图及路线服务尚未初始化。")
         try:
             mcp_settings = AmapMCPSettings()
         except ValidationError:
@@ -83,5 +89,9 @@ async def lifespan(app: FastAPI):
         try:
             await checkpoint_stack.aclose()
         finally:
-            if app.state.db_engine is not None:
-                await app.state.db_engine.dispose()
+            try:
+                if app.state.amap_route_client is not None:
+                    await app.state.amap_route_client.close()
+            finally:
+                if app.state.db_engine is not None:
+                    await app.state.db_engine.dispose()

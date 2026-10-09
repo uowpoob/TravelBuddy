@@ -1,13 +1,15 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.api.dependencies import get_current_user, get_session
 from backend.app.models import User
 from backend.app.schemas.itinerary import SavedItineraryDetail, SavedItineraryPublic
+from backend.app.schemas.route import DayRoutes, RouteMode
 from backend.app.services.itineraries import get_user_itinerary, list_user_itineraries
+from backend.app.services.routes import get_day_routes
 
 router = APIRouter(prefix="/api/v1/itineraries", tags=["itineraries"])
 
@@ -43,3 +45,34 @@ async def get_itinerary(
     if record is None:
         raise HTTPException(status_code=404, detail="行程不存在。")
     return SavedItineraryDetail.model_validate(record)
+
+
+@router.get("/{itinerary_id}/routes", response_model=DayRoutes)
+async def get_routes(
+    itinerary_id: Annotated[int, Path(ge=1, le=9223372036854775807)],
+    day: Annotated[int, Query(ge=1, le=5)],
+    request: Request,
+    user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    mode: RouteMode | None = None,
+) -> DayRoutes:
+    try:
+        record = await get_user_itinerary(session, user.id, itinerary_id)
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="数据库暂时不可用，请稍后重试。"
+        ) from None
+    if record is None:
+        raise HTTPException(status_code=404, detail="行程不存在。")
+    snapshot = SavedItineraryDetail.model_validate(record)
+    # 先读取并校验归属，再释放只读事务，不在供应商请求期间占用数据库连接。
+    await session.rollback()
+    client = getattr(request.app.state, "amap_route_client", None)
+    if client is None:
+        raise HTTPException(
+            status_code=503, detail="地图服务配置未就绪，请配置后重启。"
+        )
+    try:
+        return await get_day_routes(snapshot, day, client, mode)
+    except LookupError:
+        raise HTTPException(status_code=404, detail="该行程没有指定天数。") from None

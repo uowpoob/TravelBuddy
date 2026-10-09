@@ -38,7 +38,9 @@ class TripRequest(BaseModel):
 
 class WeatherInfo(BaseModel):
     date: date
-    description: str
+    description: str = Field(
+        description="直接展示给旅行者的天气概况，基于真实查询，不含工具名或分析过程。"
+    )
 
 
 def missing_request_fields(request: TripRequest) -> list[str]:
@@ -53,5 +55,11 @@ class TravelConstraints(BaseModel):
     """Context Analyst 的结构化输出，同时保存在 TripState.travel_constraints。"""
 
     weather: list[WeatherInfo] = Field(default_factory=list)
-    constraints: list[str] = Field(default_factory=list)
-    suggestions: list[str] = Field(default_factory=list)
+    constraints: list[str] = Field(
+        default_factory=list,
+        description="直接展示给旅行者的明确出行要求，保留数值与单位，使用自然中文。",
+    )
+    suggestions: list[str] = Field(
+        default_factory=list,
+        description="直接展示给旅行者的实用出行建议或信息缺失的影响，不含 Agent 分工、字段名或内部分析。",
+    )

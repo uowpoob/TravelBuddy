@@ -6,7 +6,6 @@ import {
   CalendarDays,
   Compass,
   LoaderCircle,
-  Map,
   MapPin,
   Send,
   Sparkles,
@@ -16,8 +15,10 @@ import {
 import { Link, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthProvider'
 import { useToast } from '../../components/common/ToastProvider'
-import { MapPreview, ThemeCards, WorkflowPreview } from './TravelPreview'
+import { ThemeCards, WorkflowPreview } from './TravelPreview'
 import { tripDraftMessage, useTripDraft } from './useTripDraft'
+import { RecentConversations } from './RecentConversations'
+import { RecentTripMap } from '../maps/RecentTripMap'
 import { ApiError } from '../../api/auth'
 import { conversationsApi } from '../../api/conversations'
 
@@ -295,47 +296,8 @@ export function DashboardPage() {
       </div>
 
       <div className="overview-grid">
-        <section className="panel next-trip-panel">
-          <div className="section-heading">
-            <h2>我的旅行会话</h2>
-            <Link className="text-link" to="/app/conversations">
-              查看会话
-              <ArrowRight size={14} />
-            </Link>
-          </div>
-          <div className="trip-empty">
-            <div className="ticket-illustration" aria-hidden="true">
-              <span className="ticket-route">
-                <MapPin size={20} />
-                <i />
-                <Compass size={20} />
-              </span>
-              <span className="ticket-line" />
-              <span className="ticket-line ticket-line-short" />
-              <span className="ticket-perforation" />
-            </div>
-            <div>
-              <h3>故事的下一页，还等你来写</h3>
-              <p>
-                从旅行想法到确认方案，
-                <br />
-                随时回到会话继续规划。
-              </p>
-            </div>
-          </div>
-        </section>
-        <section className="panel map-panel">
-          <div className="section-heading">
-            <h2>
-              <Map size={17} />
-              在地图上看旅程
-            </h2>
-            <Link to="/app/map" className="text-link" aria-label="打开地图预览">
-              <ArrowUpRight size={17} />
-            </Link>
-          </div>
-          <MapPreview />
-        </section>
+        <RecentConversations />
+        <RecentTripMap />
       </div>
       <section className="inspiration-section">
         <div className="section-heading">
