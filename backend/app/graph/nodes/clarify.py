@@ -4,6 +4,7 @@ from langgraph.types import interrupt
 from pydantic import ConfigDict, Field, RootModel
 
 from backend.app.graph.context import TravelBuddyContext
+from backend.app.graph.messages import question_message_id
 from backend.app.graph.nodes.understand import missing_fields_question
 from backend.app.graph.state import TripState
 
@@ -49,7 +50,7 @@ class ClarifyNode:
         # 将问题也保留在对话中，Understand 才能理解“人均”等简短回答。
         return {
             "messages": [
-                AIMessage(content=question),
+                AIMessage(content=question, id=question_message_id(state, "clarify")),
                 HumanMessage(content=answer.root),
             ]
         }

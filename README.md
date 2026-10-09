@@ -47,6 +47,19 @@ uv run python -m backend --reload
 可在 `/docs` 中注册、登录并使用 Authorize 调用 me。
 请求格式、返回字段和后续接口鉴权方式见 [AUTH.md](docs/AUTH.md)。
 
+## 会话接口
+
+已实现 `POST /api/v1/conversations`，使用 Bearer JWT 归属于当前登录用户。
+发送 `{"title":"杭州周末游"}` 或 `{}`（默认“新旅行”），成功返回 201 和会话 UUID、
+标题及时间。
+`GET /api/v1/conversations?offset=0&limit=20` 按更新时间倒序查询当前用户的会话列表；
+`GET /api/v1/conversations/{conversation_id}` 查看详情，不存在或不属于当前用户时返回 404。
+`GET /api/v1/conversations/{conversation_id}/messages` 分页查看对话及澄清/确认状态；
+`POST /api/v1/conversations/{conversation_id}/messages` 发送 `{"content":"想去杭州"}`，
+等待本轮暂停或完成后一次性返回 JSON。相同接口支持回答澄清问题、确认或修改方案，
+未完成的失败步骤可发送 `{"retry":true}` 恢复。
+请求格式与分层说明见 [CONVERSATIONS.md](docs/CONVERSATIONS.md)。
+
 ## 在终端测试旅行图
 
 不启动前端或 HTTP 服务，直接输入需求、回答澄清问题、确认并保存：
@@ -163,7 +176,7 @@ Reviewer 构建时不接收外部工具。角色工厂保留结构化输出和�
 travel_constraints、itinerary、review_result 和 clarification_question，
 内部模型与工具消息留在专业子图。Planner 修订时携带旧行程和审核意见。
 接口可用 `Depends(get_trip_graph)` 获取缓存总图；未就绪时返回 503。
-Save 已接入业务数据库，审核自动修订最多两轮；旅行运行/恢复 HTTP 接口仍待实现。
+Save 已接入业务数据库，审核自动修订最多两轮；非流式旅行运行/恢复已通过消息 HTTP 接口接入。
 生命周期已接入 checkpoint，并在关闭时释放 saver。
 
 Understand 已实现：读取最新一条用户消息、已有 TripRequest、近期对话和审核意见，
@@ -228,7 +241,7 @@ result = await graph.ainvoke(
 
 独立构建图时须传入 checkpointer；应用生命周期根据 `LANGGRAPH_PG_DSN` 使用
 PostgreSQL saver，未配置时使用内存 saver。内存只能在当前进程中恢复；
-PostgreSQL 表须先用现有初始化脚本建立。旅行恢复 HTTP 接口仍待实现。
+PostgreSQL 表须先用现有初始化脚本建立。消息 HTTP 接口会自动恢复澄清/确认暂停。
 
 模型结构化输出统一从 `backend/app/schemas/structured_output.py` 导入：
 Understand 使用专用的 RequestUnderstanding；四个专业 Agent 分别使用 Candidates、
@@ -265,7 +278,8 @@ build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客�
 
 首个迁移版本为 `118ebaead2fc`；最新版本 `c6a1e7d4b930` 为行程增加 `save_key`
 和会话内唯一约束。完整字段、约束和 Save 接入说明见
-[DATABASE.md](docs/DATABASE.md)。Save 和注册登录已实现，会话及旅行业务 API 仍待实现。
+[DATABASE.md](docs/DATABASE.md)。Save、注册登录和创建会话已实现；
+会话列表、详情、消息查看和非流式旅行运行/恢复也已实现；独立行程查询 API 仍待实现。
 
 本地 `.env` 的 `DATABASE_DSN` 指向独立的 `travelbuddy` 数据库。
 连接账号可复用现有本地 PostgreSQL 账号，但不要指向其他项目的数据库。
