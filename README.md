@@ -70,7 +70,7 @@ cd frontend
 npm run dev
 ```
 
-打开 http://127.0.0.1:5173，登录后可在首页填写旅行需求并点击“开始规划”，
+打开 http://127.0.0.1:3000，登录后可在首页填写旅行需求并点击“开始规划”，
 或通过侧栏“旅行会话”新建、继续会话。开发代理默认指向 http://127.0.0.1:8000，
 可通过 `frontend/.env.local` 中的 `API_PROXY_TARGET` 修改。
 详细测试流程及错误恢复说明见 [FRONTEND_CONVERSATIONS.md](docs/FRONTEND_CONVERSATIONS.md)。
