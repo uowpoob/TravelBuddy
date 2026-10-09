@@ -24,11 +24,25 @@ class AuthSettings(BaseSettings):
     AUTH_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60, ge=1, le=1440)
 
 
+class MapSettings(BaseSettings):
+    """地图服务独立配置，不依赖模型或 checkpoint。"""
+
+    model_config = SettingsConfigDict(
+        env_file=PROJECT_ROOT / ".env", env_file_encoding="utf-8", extra="ignore"
+    )
+    GD_API_KEY: SecretStr = SecretStr("")
+    GD_JSAPI_KEY: str = ""
+    GD_JSAPI_SECURITY_CODE: SecretStr = SecretStr("")
+    GD_ROUTE_TIMEOUT_SECONDS: float = Field(
+        default=15, gt=0, le=60, allow_inf_nan=False
+    )
+    GD_ROUTE_CACHE_TTL_SECONDS: int = Field(default=900, ge=1, le=86400)
+    GD_ROUTE_CACHE_MAX_ENTRIES: int = Field(default=512, ge=1, le=10000)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=PROJECT_ROOT / ".env",
-        env_file_encoding="utf-8",
-        extra="ignore"
+        env_file=PROJECT_ROOT / ".env", env_file_encoding="utf-8", extra="ignore"
     )
 
     database_dsn: SecretStr

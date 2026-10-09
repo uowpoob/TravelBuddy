@@ -26,7 +26,10 @@ class EstimatedCost(BaseModel):
 
     # 未查询费用时保留未知，不能以 0 冒充预算估算。
     total: float | None = Field(default=None, ge=0)
-    breakdown: dict[str, float] = Field(default_factory=dict)
+    breakdown: dict[str, float] = Field(
+        default_factory=dict,
+        description="已确认的部分费用，项目名称使用面向旅行者的中文，如交通、门票；金额为全体人员的人民币费用。",
+    )
 
 
 class Itinerary(BaseModel):
@@ -34,7 +37,10 @@ class Itinerary(BaseModel):
 
     days: list[DayPlan]
     estimated_cost: EstimatedCost
-    notes: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(
+        default_factory=list,
+        description="直接展示给旅行者的简短行程提醒，说明实际影响与建议；不含 Agent、工具、字段名、null/非 0 说明或推理审核过程。",
+    )
 
 
 class SavedItineraryPublic(BaseModel):

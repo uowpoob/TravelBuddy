@@ -1,17 +1,7 @@
-import {
-  ArrowRight,
-  CalendarDays,
-  Check,
-  Compass,
-  LogOut,
-  Map,
-  Route,
-  Sparkles,
-  UserRound,
-} from 'lucide-react'
-import { Link, useNavigate } from 'react-router'
+import { CalendarDays, Check, Compass, LogOut, Route, Sparkles, UserRound } from 'lucide-react'
+import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthProvider'
-import { MapPreview, ThemeCards, WorkflowPreview } from './TravelPreview'
+import { ThemeCards, WorkflowPreview } from './TravelPreview'
 
 function PageTitle({
   eyebrow,
@@ -59,41 +49,6 @@ export function ExplorePage() {
           <h3>更多目的地，正在路上</h3>
           <p>目的地搜索、收藏和个性化推荐即将开放。</p>
         </div>
-      </div>
-    </div>
-  )
-}
-
-export function MapPage() {
-  return (
-    <div className="page-enter">
-      <PageTitle
-        eyebrow="PUT YOUR PLANS ON THE MAP"
-        title="地图与路线"
-        description="让想去的地方，在地图上连成一段旅程。"
-      />
-      <div className="map-page-layout">
-        <section className="panel map-page-main">
-          <div className="section-heading">
-            <h2>
-              <Map size={18} />
-              旅程地图
-            </h2>
-            <span className="badge badge-neutral">示意预览</span>
-          </div>
-          <MapPreview large />
-        </section>
-        <section className="panel map-route-empty">
-          <span className="empty-small-icon">
-            <Route size={28} />
-          </span>
-          <h2>路线还在等待出发</h2>
-          <p>未来将在这里展示地点、交通方式和每日路线。</p>
-          <Link className="text-link" to="/app">
-            返回旅行工作台
-            <ArrowRight size={15} />
-          </Link>
-        </section>
       </div>
     </div>
   )

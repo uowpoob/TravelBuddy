@@ -1,10 +1,11 @@
 import { ApiError } from './auth'
 import type { SavedItinerary, SavedItineraryDetail } from '../types/itinerary'
+import type { DayRoutes, RouteMode } from '../types/route'
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
 async function request<T>(token: string, path: string, signal?: AbortSignal): Promise<T> {
-  const timeout = AbortSignal.timeout(20_000)
+  const timeout = AbortSignal.timeout(path.includes('/routes?') ? 120_000 : 20_000)
   let response: Response
   try {
     response = await fetch(`${baseUrl}/api/v1/itineraries${path}`, {
@@ -34,6 +35,12 @@ async function request<T>(token: string, path: string, signal?: AbortSignal): Pr
 }
 
 export const itinerariesApi = {
+  routes: (token: string, id: string, day: number, mode?: RouteMode, signal?: AbortSignal) =>
+    request<DayRoutes>(
+      token,
+      `/${encodeURIComponent(id)}/routes?day=${day}${mode ? `&mode=${mode}` : ''}`,
+      signal,
+    ),
   list: (token: string, offset = 0, signal?: AbortSignal) =>
     request<SavedItinerary[]>(token, `?offset=${offset}&limit=20`, signal),
   get: (token: string, id: string, signal?: AbortSignal) =>

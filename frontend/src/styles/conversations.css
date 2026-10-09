@@ -418,6 +418,17 @@
   font-weight: 600;
   color: var(--primary);
 }
+.itinerary-reminders {
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  padding-top: 16px;
+}
+.itinerary-reminders h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
 .itinerary-notes {
   padding-left: 18px;
   font-size: 12px;

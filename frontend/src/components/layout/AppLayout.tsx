@@ -101,9 +101,10 @@ export function AppLayout() {
             >
               <Icon size={19} />
               <span>{label}</span>
-              {path !== '/app' && path !== '/app/conversations' && path !== '/app/trips' && (
-                <span className="nav-upcoming" aria-label="即将开放" />
-              )}
+              {path !== '/app' &&
+                path !== '/app/conversations' &&
+                path !== '/app/trips' &&
+                path !== '/app/map' && <span className="nav-upcoming" aria-label="即将开放" />}
             </NavLink>
           ))}
         </nav>

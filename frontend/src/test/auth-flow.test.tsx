@@ -22,6 +22,18 @@ function response(body: unknown, status = 200) {
   })
 }
 
+function authServer(body: unknown) {
+  return vi.fn((url: string) =>
+    Promise.resolve(
+      response(
+        url.startsWith('/api/v1/conversations?') || url.startsWith('/api/v1/itineraries?')
+          ? []
+          : body,
+      ),
+    ),
+  )
+}
+
 function renderApp(path = '/login') {
   return render(
     <MemoryRouter initialEntries={[path]}>
@@ -63,7 +75,7 @@ describe('登录与注册', () => {
   })
 
   it('成功登录后进入主页面，默认仅保存当前会话，并能退出登录', async () => {
-    const fetch = vi.fn().mockResolvedValue(response(tokenResponse))
+    const fetch = authServer(tokenResponse)
     vi.stubGlobal('fetch', fetch)
     renderApp()
     const interaction = await fillLogin()
@@ -87,7 +99,7 @@ describe('登录与注册', () => {
   })
 
   it('选择保持登录时保存令牌到本地存储', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response(tokenResponse)))
+    vi.stubGlobal('fetch', authServer(tokenResponse))
     renderApp()
     const interaction = await fillLogin()
     await interaction.click(screen.getByRole('checkbox', { name: /保持登录/ }))
@@ -206,7 +218,7 @@ describe('登录与注册', () => {
 describe('登录恢复和页面骨架', () => {
   it('从存储恢复令牌时，向 me 验证用户再打开主页面', async () => {
     cachedLogin()
-    const fetch = vi.fn().mockResolvedValue(response(user))
+    const fetch = authServer(user)
     vi.stubGlobal('fetch', fetch)
     renderApp('/app')
     expect(await screen.findByRole('heading', { name: /嗨，traveler/ })).toBeVisible()
@@ -230,8 +242,7 @@ describe('登录恢复和页面骨架', () => {
 
   it('服务暂时不可用时保留令牌，并能重试恢复', async () => {
     cachedLogin()
-    const fetch = vi
-      .fn()
+    const fetch = authServer(user)
       .mockResolvedValueOnce(response({}, 503))
       .mockResolvedValueOnce(response(user))
     vi.stubGlobal('fetch', fetch)
@@ -256,7 +267,7 @@ describe('登录恢复和页面骨架', () => {
 
   it('旅行想法按用户保存，主页面导航可以访问空状态', async () => {
     cachedLogin()
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response(user)))
+    vi.stubGlobal('fetch', authServer(user))
     renderApp('/app')
     await screen.findByRole('heading', { name: /嗨，traveler/ })
     const interaction = userEvent.setup()
@@ -268,14 +279,14 @@ describe('登录恢复和页面骨架', () => {
     })
     await interaction.click(screen.getByRole('link', { name: /我的行程/ }))
     expect(await screen.findByRole('heading', { name: '我的行程' })).toBeVisible()
-    expect(screen.getByText('你的旅行故事，将从这里开始')).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '还没有保存的行程' })).toBeVisible()
   })
 
   it('浏览器存储被禁用时仍然允许本次登录', async () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('Storage blocked', 'SecurityError')
     })
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(response(tokenResponse)))
+    vi.stubGlobal('fetch', authServer(tokenResponse))
     renderApp()
     const interaction = await fillLogin()
     await interaction.click(screen.getByRole('button', { name: '登录，开始旅程' }))
