@@ -6,6 +6,7 @@ from langgraph.types import interrupt
 from pydantic import ConfigDict, Field, RootModel
 
 from backend.app.graph.context import TravelBuddyContext
+from backend.app.graph.messages import question_message_id
 from backend.app.graph.state import TripState
 from backend.app.schemas.itinerary import Itinerary
 from backend.app.schemas.place import Candidates
@@ -132,7 +133,10 @@ class ConfirmNode:
         # 中断前只读取状态；取得有效回答后才追加消息，保留方案作为修改上下文。
         return {
             "messages": [
-                AIMessage(content=f"{summary}\n\n{CONFIRMATION_QUESTION}"),
+                AIMessage(
+                    content=f"{summary}\n\n{CONFIRMATION_QUESTION}",
+                    id=question_message_id(state, "confirm"),
+                ),
                 HumanMessage(content=answer.root),
             ],
             "confirmed": confirmed,

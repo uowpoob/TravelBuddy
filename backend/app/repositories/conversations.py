@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.models import Conversation
@@ -33,4 +33,24 @@ class ConversationRepository:
             select(Conversation).where(
                 Conversation.id == conversation_id, Conversation.user_id == user_id
             )
+        )
+
+    async def try_lock_messages(self, conversation_id: str) -> bool:
+        # 事务级 advisory lock 跨进程保护同一个 checkpoint；不锁会话行，
+        # 避免与 Save 专用 session 的会话行锁互相等待。commit/rollback 自动释放。
+        return bool(
+            await self.session.scalar(
+                select(
+                    func.pg_try_advisory_xact_lock(
+                        func.hashtextextended(f"travelbuddy:messages:{conversation_id}", 0)
+                    )
+                )
+            )
+        )
+
+    async def touch(self, conversation_id: str, user_id: int) -> None:
+        await self.session.execute(
+            update(Conversation)
+            .where(Conversation.id == conversation_id, Conversation.user_id == user_id)
+            .values(updated_at=func.clock_timestamp())
         )
