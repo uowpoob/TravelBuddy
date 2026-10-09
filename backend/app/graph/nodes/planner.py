@@ -30,6 +30,13 @@ class PlannerNode:
             "review_result": review,
             "itinerary": state.get("itinerary"),
         }
+        for field in (
+            "changed_fields",
+            "revision_request",
+            "itinerary_request",
+        ):
+            if field in state:
+                graph_input[field] = state[field]
         result = await self.graph.ainvoke(
             graph_input, config=config, context=runtime.context
         )
@@ -40,6 +47,7 @@ class PlannerNode:
         # 与方案一起进入 checkpoint；Confirm/Save 重试不能重新生成保存标识。
         return {
             "itinerary": result["itinerary"],
+            "itinerary_request": state["trip_request"],
             "revision_count": revision_count,
             "save_key": str(uuid4()),
             "confirmed": False,

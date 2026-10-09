@@ -19,3 +19,6 @@ class PlannerState(MessagesState, total=False):
 
     # 修订时读取旧行程，完成后写入新行程并交回主图。
     itinerary: Itinerary | None
+    changed_fields: list[str]
+    revision_request: str | None
+    itinerary_request: TripRequest | None

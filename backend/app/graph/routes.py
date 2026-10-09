@@ -9,7 +9,7 @@ MAX_REVISIONS = 2
 def route_after_understand(
     state: TripState,
 ) -> list[Literal["clarify", "researcher", "context_analyst"]]:
-    """信息不足则澄清，完整则同时启动两支调研。"""
+    """信息不足则澄清；完整时两支调研按失效标记执行或直接复用。"""
     if state["missing_fields"] or state.get("clarification_question"):
         return ["clarify"]
     return ["researcher", "context_analyst"]

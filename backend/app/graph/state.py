@@ -21,6 +21,13 @@ class TripState(MessagesState, total=False):
     clarification_question: str | None
     last_understood_message_id: str | None
 
+    # 本轮实际变更及旧方案对应的需求，用于局部修订和证据复用。
+    changed_fields: list[str]
+    revision_request: str | None
+    research_required: bool
+    context_required: bool
+    itinerary_request: TripRequest | None
+
     # 两个并行 Agent 各自写入一个字段，Planner 汇合后读取。
     candidates: Candidates
     travel_constraints: TravelConstraints
