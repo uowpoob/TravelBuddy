@@ -8,10 +8,12 @@ type AuthStatus = 'checking' | 'authenticated' | 'anonymous' | 'unavailable'
 
 interface AuthContextValue {
   user: UserPublic | null
+  token: string | null
   status: AuthStatus
   message: string
   login: (credentials: Credentials, remember: boolean) => Promise<void>
   logout: () => void
+  expireSession: () => void
   retry: () => void
 }
 
@@ -31,6 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('anonymous')
     setMessage(reason)
   }, [])
+
+  const expireSession = useCallback(() => endSession('登录已过期，请重新登录。'), [endSession])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -84,10 +88,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        token: session?.token ?? null,
         status,
         message,
         login,
         logout: () => endSession(),
+        expireSession,
         retry: () => setRetryCount((value) => value + 1),
       }}
     >

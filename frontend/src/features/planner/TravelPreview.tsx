@@ -113,7 +113,7 @@ export function WorkflowPreview({ expanded = false }: { expanded?: boolean }) {
           <Sparkles size={18} />
           旅程如何诞生
         </h2>
-        <span className="badge badge-neutral">即将开放</span>
+        <span className="badge badge-neutral">规划流程</span>
       </div>
       <p className="section-description">你的一个想法，我们一步步认真规划。</p>
       <ol className="workflow-steps">
@@ -134,7 +134,7 @@ export function WorkflowPreview({ expanded = false }: { expanded?: boolean }) {
         <span>
           <Check size={13} />
         </span>
-        等待你的第一段旅程
+        在旅行会话中补充需求、确认方案
       </div>
     </section>
   )

@@ -9,6 +9,7 @@ import {
   LogOut,
   Map,
   Menu,
+  MessageCircle,
   Plus,
   Route,
   Settings2,
@@ -22,6 +23,7 @@ import { useAuth } from '../../features/auth/AuthProvider'
 
 const navigation = [
   { path: '/app', label: '旅行工作台', icon: LayoutDashboard, end: true },
+  { path: '/app/conversations', label: '旅行会话', icon: MessageCircle },
   { path: '/app/trips', label: '我的行程', icon: CalendarDays },
   { path: '/app/explore', label: '发现灵感', icon: Compass },
   { path: '/app/map', label: '地图与路线', icon: Map },
@@ -45,7 +47,12 @@ export function AppLayout() {
     document.addEventListener('keydown', escape)
     return () => document.removeEventListener('keydown', escape)
   }, [menuOpen])
-  const title = navigation.find((item) => item.path === location.pathname)?.label || '账号设置'
+  const title =
+    navigation.find(
+      (item) =>
+        item.path === location.pathname ||
+        (item.path === '/app/conversations' && location.pathname.startsWith('/app/conversations/')),
+    )?.label || '账号设置'
 
   return (
     <div className="workspace">
@@ -94,7 +101,9 @@ export function AppLayout() {
             >
               <Icon size={19} />
               <span>{label}</span>
-              {path !== '/app' && <span className="nav-upcoming" aria-label="即将开放" />}
+              {path !== '/app' && path !== '/app/conversations' && (
+                <span className="nav-upcoming" aria-label="即将开放" />
+              )}
             </NavLink>
           ))}
         </nav>

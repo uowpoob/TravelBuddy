@@ -5,6 +5,7 @@ export interface TripDraft {
   date: string
   days: string
   travelers: string
+  transport: string
   note: string
 }
 
@@ -13,7 +14,21 @@ export const emptyDraft: TripDraft = {
   date: '',
   days: '3',
   travelers: '2',
+  transport: '',
   note: '',
+}
+
+export function tripDraftMessage(draft: TripDraft) {
+  return [
+    draft.note.trim(),
+    draft.destination.trim() && `目的地：${draft.destination.trim()}`,
+    draft.date && `出发日期：${draft.date}`,
+    `旅行天数：${draft.days} 天`,
+    `出行人数：${draft.travelers} 人`,
+    draft.transport && `交通方式：${draft.transport}`,
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 export function useTripDraft(userId: number) {
