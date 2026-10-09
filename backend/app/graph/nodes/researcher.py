@@ -53,6 +53,10 @@ class ResearcherNode:
                     if place.id in used_ids and place.id not in seen:
                         getattr(candidates, category).append(place)
                         seen.add(place.id)
+        if not (candidates.attractions or candidates.restaurants or candidates.hotels):
+            raise ValueError(
+                "地点调研没有得到可用地点，暂时无法生成具体行程，请重试地点调研。"
+            )
         return {
             "candidates": candidates,
             "research_required": False,
