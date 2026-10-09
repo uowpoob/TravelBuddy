@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
   ArrowUpRight,
   Bookmark,
   CalendarDays,
   Compass,
+  LoaderCircle,
   Map,
   MapPin,
   Send,
@@ -16,7 +17,9 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthProvider'
 import { useToast } from '../../components/common/ToastProvider'
 import { MapPreview, ThemeCards, WorkflowPreview } from './TravelPreview'
-import { useTripDraft } from './useTripDraft'
+import { tripDraftMessage, useTripDraft } from './useTripDraft'
+import { ApiError } from '../../api/auth'
+import { conversationsApi } from '../../api/conversations'
 
 const presets = [
   {
@@ -29,12 +32,22 @@ const presets = [
 ]
 
 export function DashboardPage() {
-  const { user } = useAuth()
+  const { user, token, expireSession } = useAuth()
   const toast = useToast()
   const location = useLocation()
   const navigate = useNavigate()
   const { draft, setDraft, save, reset } = useTripDraft(user!.id)
   const noteRef = useRef<HTMLTextAreaElement>(null)
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState('')
+  const lock = useRef(false)
+  const mounted = useRef(false)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   useEffect(() => {
     const state = location.state as { newTrip?: number; destination?: string; note?: string } | null
     if (state?.newTrip) reset()
@@ -64,6 +77,37 @@ export function DashboardPage() {
     }
   }
 
+  async function startPlanning() {
+    if (lock.current) return
+    if (!draft.destination.trim() && !draft.note.trim()) {
+      setError('先填写目的地，或者说说你的旅行想法。')
+      noteRef.current?.focus()
+      return
+    }
+    lock.current = true
+    setCreating(true)
+    setError('')
+    const initialMessage = tripDraftMessage(draft)
+    const title = (
+      draft.destination.trim()
+        ? `${draft.destination.trim()}旅行`
+        : draft.note.trim().split('\n')[0]
+    ).slice(0, 100)
+    try {
+      const conversation = await conversationsApi.create(token!, title)
+      if (!mounted.current) return
+      reset()
+      navigate(`/app/conversations/${conversation.id}`, { state: { initialMessage } })
+    } catch (failure) {
+      if (!mounted.current) return
+      if (failure instanceof ApiError && failure.status === 401) expireSession()
+      else setError(failure instanceof Error ? failure.message : '会话创建失败，请稍后重试。')
+    } finally {
+      lock.current = false
+      if (mounted.current) setCreating(false)
+    }
+  }
+
   return (
     <div className="dashboard page-enter">
       <div className="page-intro">
@@ -74,7 +118,9 @@ export function DashboardPage() {
           </h1>
           <p>生活不止眼前，下一程值得期待。</p>
         </div>
-        <span className="workspace-preview-label">旅行空间 · 初见版</span>
+        <Link className="text-link" to="/app/conversations">
+          继续旅行会话 <ArrowRight size={14} />
+        </Link>
       </div>
       <section className="dashboard-hero">
         <img src="/images/journey-hero.webp" alt="青山环绕的湖泊和延伸向远方的小路" />
@@ -170,6 +216,28 @@ export function DashboardPage() {
               </button>
             ))}
           </div>
+          <div className="trip-transport">
+            <label htmlFor="trip-transport">交通方式</label>
+            <select
+              id="trip-transport"
+              value={draft.transport}
+              onChange={(event) =>
+                setDraft((value) => ({ ...value, transport: event.target.value }))
+              }
+            >
+              <option value="">还没想好，稍后补充</option>
+              <option value="公共交通与步行">公共交通与步行</option>
+              <option value="自驾">自驾</option>
+              <option value="步行">步行</option>
+              <option value="骑行">骑行</option>
+              <option value="出租车与步行">出租车与步行</option>
+            </select>
+          </div>
+          {error && (
+            <div className="conversation-error" role="alert">
+              {error}
+            </div>
+          )}
           <div className="composer-bottom">
             <div className="trip-options">
               <label>
@@ -211,16 +279,16 @@ export function DashboardPage() {
             </button>
             <button
               className="button button-primary plan-button"
-              disabled
-              title="旅程规划功能即将开放"
+              disabled={creating}
+              onClick={() => void startPlanning()}
             >
-              <Send size={15} />
-              开始规划<span>即将开放</span>
+              {creating ? <LoaderCircle size={15} className="spin" /> : <Send size={15} />}
+              {creating ? '正在创建会话…' : '开始规划'}
             </button>
           </div>
           <div className="composer-footnote">
             <span className="small-dot" />
-            现在可以记录想法，完整的旅程规划即将开放。
+            开始规划后，可以在会话中补充需求、调整并确认行程。
           </div>
         </section>
         <WorkflowPreview />
@@ -229,9 +297,9 @@ export function DashboardPage() {
       <div className="overview-grid">
         <section className="panel next-trip-panel">
           <div className="section-heading">
-            <h2>我的下一段旅程</h2>
-            <Link className="text-link" to="/app/trips">
-              全部行程
+            <h2>我的旅行会话</h2>
+            <Link className="text-link" to="/app/conversations">
+              查看会话
               <ArrowRight size={14} />
             </Link>
           </div>
@@ -249,9 +317,9 @@ export function DashboardPage() {
             <div>
               <h3>故事的下一页，还等你来写</h3>
               <p>
-                创建的行程会收纳在这里。
+                从旅行想法到确认方案，
                 <br />
-                行程管理功能即将开放。
+                随时回到会话继续规划。
               </p>
             </div>
           </div>

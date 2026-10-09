@@ -60,6 +60,21 @@ uv run python -m backend --reload
 未完成的失败步骤可发送 `{"retry":true}` 恢复。
 请求格式与分层说明见 [CONVERSATIONS.md](docs/CONVERSATIONS.md)。
 
+## 前端会话联调
+
+前端已接入会话创建、列表、历史消息、需求澄清、方案修改、确认保存和失败步骤恢复。
+启动后端后，在另一个终端运行：
+
+```powershell
+cd frontend
+npm run dev
+```
+
+打开 http://127.0.0.1:5173，登录后可在首页填写旅行需求并点击“开始规划”，
+或通过侧栏“旅行会话”新建、继续会话。开发代理默认指向 http://127.0.0.1:8000，
+可通过 `frontend/.env.local` 中的 `API_PROXY_TARGET` 修改。
+详细测试流程及错误恢复说明见 [FRONTEND_CONVERSATIONS.md](docs/FRONTEND_CONVERSATIONS.md)。
+
 ## 在终端测试旅行图
 
 不启动前端或 HTTP 服务，直接输入需求、回答澄清问题、确认并保存：

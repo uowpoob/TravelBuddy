@@ -4,6 +4,8 @@ import { Brand } from '../components/common/Brand'
 import { AppLayout } from '../components/layout/AppLayout'
 import { AuthPage } from '../features/auth/AuthPage'
 import { useAuth } from '../features/auth/AuthProvider'
+import { ConversationsPage } from '../features/conversations/ConversationsPage'
+import { ConversationPage } from '../features/conversations/ConversationPage'
 import { DashboardPage } from '../features/planner/DashboardPage'
 import {
   ExplorePage,
@@ -56,6 +58,8 @@ export function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="conversations" element={<ConversationsPage />} />
+          <Route path="conversations/:conversationId" element={<ConversationPage />} />
           <Route path="trips" element={<TripsPage />} />
           <Route path="explore" element={<ExplorePage />} />
           <Route path="map" element={<MapPage />} />

@@ -216,7 +216,7 @@ describe('登录恢复和页面骨架', () => {
         headers: expect.objectContaining({ Authorization: 'Bearer cached-token' }),
       }),
     )
-    expect(screen.getByRole('button', { name: /开始规划/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /开始规划/ })).toBeEnabled()
   })
 
   it('失效令牌会被清除，并返回登录页', async () => {
