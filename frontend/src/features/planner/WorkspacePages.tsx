@@ -5,13 +5,11 @@ import {
   Compass,
   LogOut,
   Map,
-  MapPin,
   Route,
   Sparkles,
   UserRound,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
-import type { ReactNode } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { MapPreview, ThemeCards, WorkflowPreview } from './TravelPreview'
 
@@ -32,61 +30,6 @@ function PageTitle({
         <p>{description}</p>
       </div>
       <span className="badge badge-neutral">即将开放</span>
-    </div>
-  )
-}
-
-function EmptyState({
-  icon,
-  title,
-  description,
-}: {
-  icon: ReactNode
-  title: string
-  description: string
-}) {
-  return (
-    <div className="large-empty panel">
-      <div className="empty-orbit">
-        <span className="orbit-dot dot-one" />
-        <span className="orbit-dot dot-two" />
-        <span className="empty-main-icon">{icon}</span>
-        <span className="orbit-pin">
-          <MapPin size={18} />
-        </span>
-        <span className="orbit-star">
-          <Sparkles size={16} />
-        </span>
-      </div>
-      <h2>{title}</h2>
-      <p>{description}</p>
-      <Link to="/app" className="button button-primary">
-        先记下旅行想法
-        <ArrowRight size={17} />
-      </Link>
-    </div>
-  )
-}
-
-export function TripsPage() {
-  return (
-    <div className="page-enter">
-      <PageTitle
-        eyebrow="COLLECT YOUR JOURNEYS"
-        title="我的行程"
-        description="把去过的风景，和还没出发的期待，都好好收起来。"
-      />
-      <div className="empty-toolbar">
-        <span className="active">全部行程</span>
-        <span>计划中</span>
-        <span>已完成</span>
-        <span className="toolbar-note">行程列表与筛选即将开放</span>
-      </div>
-      <EmptyState
-        icon={<CalendarDays size={42} />}
-        title="你的旅行故事，将从这里开始"
-        description="未来可以在这里查看、继续和管理旅行计划。现在，先记下下一次想去的地方。"
-      />
     </div>
   )
 }

@@ -318,6 +318,9 @@ function ConversationWorkspace({ id }: { id: string }) {
                 行程 #{turn.saved_itinerary_id} · 第 {turn.saved_itinerary_version}{' '}
                 版。你可以继续提出修改，或开启新的旅行会话。
               </p>
+              <Link className="text-link" to={`/app/trips/${turn.saved_itinerary_id}`}>
+                查看行程
+              </Link>
             </div>
           </div>
         )}

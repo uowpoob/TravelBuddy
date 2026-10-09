@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.models import SavedItinerary
 from backend.app.repositories.itineraries import ItineraryRepository
 from backend.app.schemas.itinerary import Itinerary
 from backend.app.schemas.place import Candidates
@@ -32,6 +33,18 @@ class SaveKeyConflictError(ItinerarySaveError):
 class SavedItineraryResult:
     id: int
     version: int
+
+
+async def list_user_itineraries(
+    session: AsyncSession, user_id: int, offset: int = 0, limit: int = 20
+) -> list[SavedItinerary]:
+    return await ItineraryRepository(session).list_by_user(user_id, offset, limit)
+
+
+async def get_user_itinerary(
+    session: AsyncSession, user_id: int, itinerary_id: int
+) -> SavedItinerary | None:
+    return await ItineraryRepository(session).get_owned_by_id(itinerary_id, user_id)
 
 
 def _validate_model[Model: BaseModel](model: type[Model], value: object) -> Model:

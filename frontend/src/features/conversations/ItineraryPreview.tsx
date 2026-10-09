@@ -13,8 +13,15 @@ const costNames: Record<string, string> = {
 
 export function ItineraryPreview({
   interrupt,
+  title,
+  saved = false,
 }: {
-  interrupt: NonNullable<ConversationState['interrupt']>
+  interrupt: Pick<
+    NonNullable<ConversationState['interrupt']>,
+    'trip_request' | 'itinerary' | 'candidates'
+  >
+  title?: string
+  saved?: boolean
 }) {
   const { trip_request: request, itinerary, candidates } = interrupt
   if (!itinerary) return null
@@ -26,12 +33,15 @@ export function ItineraryPreview({
     ].map((place) => [place.id, place]),
   )
   return (
-    <section className="panel itinerary-preview" aria-label="待确认的旅行方案">
+    <section
+      className="panel itinerary-preview"
+      aria-label={saved ? '已保存的旅行行程' : '待确认的旅行方案'}
+    >
       <div className="section-heading">
         <h2>
-          <Route size={18} /> {request?.destination_city || '旅行'}方案
+          <Route size={18} /> {title || `${request?.destination_city || '旅行'}方案`}
         </h2>
-        <span className="badge badge-green">待确认</span>
+        <span className="badge badge-green">{saved ? '已保存' : '待确认'}</span>
       </div>
       <div className="itinerary-meta">
         {request?.start_date && (

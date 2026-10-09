@@ -51,7 +51,7 @@ export function AppLayout() {
     navigation.find(
       (item) =>
         item.path === location.pathname ||
-        (item.path === '/app/conversations' && location.pathname.startsWith('/app/conversations/')),
+        (!item.end && location.pathname.startsWith(`${item.path}/`)),
     )?.label || '账号设置'
 
   return (
@@ -101,7 +101,7 @@ export function AppLayout() {
             >
               <Icon size={19} />
               <span>{label}</span>
-              {path !== '/app' && path !== '/app/conversations' && (
+              {path !== '/app' && path !== '/app/conversations' && path !== '/app/trips' && (
                 <span className="nav-upcoming" aria-label="即将开放" />
               )}
             </NavLink>
