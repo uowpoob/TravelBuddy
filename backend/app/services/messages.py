@@ -6,6 +6,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command, StateSnapshot
+from openai import APIStatusError
 from psycopg import Error as PsycopgError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -122,7 +123,20 @@ class ConversationChatService:
     @staticmethod
     def _execution_error(exc: Exception) -> ConversationError:
         # 模型、MCP 和 checkpoint 异常可能包含配置秘密或原始输入。
-        logger.error("消息流程执行失败（%s）。", type(exc).__name__)
+        if isinstance(exc, APIStatusError):
+            # 只记录状态码，不输出请求、鉴权信息或上游响应正文。
+            logger.error(
+                "消息流程执行失败（%s，上游 HTTP %s）。",
+                type(exc).__name__,
+                exc.status_code,
+            )
+            if exc.status_code == 402:
+                return ConversationError(
+                    502,
+                    "模型服务余额不足，暂时无法继续规划；处理模型账户余额后可重试本轮。",
+                )
+        else:
+            logger.error("消息流程执行失败（%s）。", type(exc).__name__)
         if isinstance(exc, TimeoutError):
             return ConversationError(504, "本轮执行超时，请查看消息状态后重试。")
         if isinstance(exc, PsycopgError):
