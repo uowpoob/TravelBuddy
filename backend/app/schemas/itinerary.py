@@ -1,4 +1,10 @@
-from pydantic import BaseModel, Field
+from datetime import date, datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from backend.app.schemas.place import Candidates
+from backend.app.schemas.review import ReviewResult
+from backend.app.schemas.trip import TravelConstraints, TripRequest
 
 
 class Visit(BaseModel):
@@ -29,3 +35,28 @@ class Itinerary(BaseModel):
     days: list[DayPlan]
     estimated_cost: EstimatedCost
     notes: list[str] = Field(default_factory=list)
+
+
+class SavedItineraryPublic(BaseModel):
+    """已保存行程的列表摘要，每个确认版本独立展示。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    conversation_id: str
+    version: int
+    title: str
+    destination_city: str
+    start_date: date
+    days: int
+    created_at: datetime
+
+
+class SavedItineraryDetail(SavedItineraryPublic):
+    """完整版本快照，不依赖会话 checkpoint。"""
+
+    trip_request: TripRequest
+    itinerary: Itinerary
+    candidates: Candidates
+    travel_constraints: TravelConstraints | None
+    review_result: ReviewResult | None

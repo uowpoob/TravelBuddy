@@ -12,7 +12,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.app.graph.context import TravelBuddyContext
-from backend.app.graph.messages import question_message_id
 from backend.app.repositories.conversations import ConversationRepository
 from backend.app.schemas.conversation import (
     ChatMessageOut,
@@ -76,21 +75,8 @@ def public_messages(
                     content=content,
                 )
             )
-    # Clarify/Confirm 取得回答后才写入问题，暂停期间从 interrupt 投影展示。
-    if state.interrupt is not None:
-        prompt = state.interrupt
-        content = (
-            f"{prompt.summary}\n\n{prompt.question}"
-            if prompt.summary
-            else prompt.question
-        )
-        messages.append(
-            ChatMessageOut(
-                id=question_message_id(snapshot.values, prompt.type),
-                role="assistant",
-                content=content,
-            )
-        )
+    # 等待回答时仅由 interrupt 面板展示问题，不投影成聊天消息。
+    # Clarify/Confirm 恢复后写入的正式问题仍作为历史消息返回。
     return messages
 
 

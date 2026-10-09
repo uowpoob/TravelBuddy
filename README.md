@@ -294,7 +294,8 @@ build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客�
 首个迁移版本为 `118ebaead2fc`；最新版本 `c6a1e7d4b930` 为行程增加 `save_key`
 和会话内唯一约束。完整字段、约束和 Save 接入说明见
 [DATABASE.md](docs/DATABASE.md)。Save、注册登录和创建会话已实现；
-会话列表、详情、消息查看和非流式旅行运行/恢复也已实现；独立行程查询 API 仍待实现。
+会话列表、详情、消息查看和非流式旅行运行/恢复也已实现；独立行程列表与详情 API
+以及前端“我的行程”已接入，使用说明见 [ITINERARIES.md](docs/ITINERARIES.md)。
 
 本地 `.env` 的 `DATABASE_DSN` 指向独立的 `travelbuddy` 数据库。
 连接账号可复用现有本地 PostgreSQL 账号，但不要指向其他项目的数据库。

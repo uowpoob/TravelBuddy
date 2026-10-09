@@ -114,6 +114,36 @@
   display: flex;
   margin: 24px auto 0;
 }
+.trips-page .conversation-card .badge {
+  margin-bottom: 12px;
+}
+.trips-page .conversation-empty .button {
+  margin-top: 20px;
+}
+.trips-page .conversation-error .button {
+  margin-left: 12px;
+}
+.trips-page > .page-intro {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.trip-constraints h2 {
+  font-size: 16px;
+  color: var(--primary);
+}
+.trip-constraints ul,
+.trip-constraints p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #718168;
+  overflow-wrap: anywhere;
+}
+.trip-constraints ul {
+  padding-left: 20px;
+}
+.chat-saved .text-link {
+  margin-top: 8px;
+}
 .conversation-page {
   max-width: 1100px;
   margin: 0 auto;

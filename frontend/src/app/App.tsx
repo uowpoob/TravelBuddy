@@ -7,11 +7,12 @@ import { useAuth } from '../features/auth/AuthProvider'
 import { ConversationsPage } from '../features/conversations/ConversationsPage'
 import { ConversationPage } from '../features/conversations/ConversationPage'
 import { DashboardPage } from '../features/planner/DashboardPage'
+import { TripsPage } from '../features/itineraries/TripsPage'
+import { TripPage } from '../features/itineraries/TripPage'
 import {
   ExplorePage,
   MapPage,
   SettingsPage,
-  TripsPage,
   WorkflowPage,
 } from '../features/planner/WorkspacePages'
 
@@ -61,6 +62,7 @@ export function App() {
           <Route path="conversations" element={<ConversationsPage />} />
           <Route path="conversations/:conversationId" element={<ConversationPage />} />
           <Route path="trips" element={<TripsPage />} />
+          <Route path="trips/:itineraryId" element={<TripPage />} />
           <Route path="explore" element={<ExplorePage />} />
           <Route path="map" element={<MapPage />} />
           <Route path="workflow" element={<WorkflowPage />} />
