@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,7 +44,9 @@ class ConversationRepository:
             await self.session.scalar(
                 select(
                     func.pg_try_advisory_xact_lock(
-                        func.hashtextextended(f"travelbuddy:messages:{conversation_id}", 0)
+                        func.hashtextextended(
+                            f"travelbuddy:messages:{conversation_id}", 0
+                        )
                     )
                 )
             )
@@ -54,3 +58,23 @@ class ConversationRepository:
             .where(Conversation.id == conversation_id, Conversation.user_id == user_id)
             .values(updated_at=func.clock_timestamp())
         )
+
+    async def read_progress(
+        self, conversation_id: str, user_id: int
+    ) -> dict[str, Any] | None:
+        return await self.session.scalar(
+            select(Conversation.planning_progress).where(
+                Conversation.id == conversation_id, Conversation.user_id == user_id
+            )
+        )
+
+    async def write_progress(
+        self, conversation_id: str, user_id: int, progress: dict[str, Any]
+    ) -> None:
+        result = await self.session.execute(
+            update(Conversation)
+            .where(Conversation.id == conversation_id, Conversation.user_id == user_id)
+            .values(planning_progress=progress, updated_at=Conversation.updated_at)
+        )
+        if result.rowcount != 1:
+            raise ValueError("会话不存在，无法更新规划状态。")

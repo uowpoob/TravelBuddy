@@ -501,3 +501,57 @@
     padding: 16px 12px;
   }
 }
+.planning-progress {
+  margin: 20px 0;
+  padding: 24px;
+}
+.planning-progress h2 {
+  margin: 0 0 18px;
+  font-size: 18px;
+}
+.planning-nodes {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.planning-node {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.planning-node > span {
+  flex: 1;
+}
+.planning-node small {
+  color: var(--muted);
+}
+.planning-pending > svg {
+  color: var(--muted);
+}
+.planning-running > svg {
+  color: #2563eb;
+}
+.planning-completed > svg {
+  color: var(--primary);
+}
+.planning-failed > svg {
+  color: #b44747;
+}
+.planning-waiting > svg {
+  color: #b67a22;
+}
+.planning-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+.planning-selector select {
+  max-width: 75%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}

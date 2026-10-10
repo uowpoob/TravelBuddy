@@ -21,6 +21,8 @@ from backend.app.schemas.conversation import (
     MessageCreate,
     MessageTurnOut,
 )
+from backend.app.schemas.planning import PlanningProgressOut, PlanningProgressState
+from backend.app.services.planning import PlanningProgressRecorder
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +94,52 @@ class ConversationChatService:
         self.session_factory = session_factory
         self.timeout = timeout
 
+    @staticmethod
+    def prepare_turn(
+        before: StateSnapshot, payload: MessageCreate
+    ) -> dict | Command | None:
+        if payload.retry:
+            if before.interrupts or not before.next:
+                raise ConversationError(409, "当前没有可重试的步骤，请发送新的消息。")
+            return None
+        if before.interrupts:
+            return Command(resume=payload.content)
+        if before.next:
+            raise ConversationError(409, "上轮执行尚未完成，请使用 retry=true 重试。")
+        return {"messages": [HumanMessage(content=payload.content, id=str(uuid4()))]}
+
+    async def get_progress(
+        self, session: AsyncSession, user_id: int, conversation_id: str
+    ) -> PlanningProgressOut:
+        repository = ConversationRepository(session)
+        conversation = await repository.get_owned_by_id(conversation_id, user_id)
+        if conversation is None:
+            raise ConversationError(404, "会话不存在。")
+        state = PlanningProgressState.model_validate(
+            conversation.planning_progress or {}
+        )
+        if state.status == "running" and await repository.try_lock_messages(
+            conversation_id
+        ):
+            # With no execution lock owner, the old request has stopped. Read
+            # again under the lock: it may have finished after our first SELECT.
+            try:
+                state = PlanningProgressState.model_validate(
+                    await repository.read_progress(conversation_id, user_id) or {}
+                )
+                if state.status == "running":
+                    state.finish("failed", "本轮执行已中断，请查看会话状态后继续规划。")
+                    await repository.write_progress(
+                        conversation_id, user_id, state.model_dump(mode="json")
+                    )
+                    await session.commit()
+            finally:
+                if session.in_transaction():
+                    await session.rollback()
+        return PlanningProgressOut(
+            conversation_id=conversation_id, **state.model_dump()
+        )
+
     async def _owned_graph(
         self, session: AsyncSession, user_id: int, conversation_id: str
     ) -> CompiledStateGraph:
@@ -128,7 +176,9 @@ class ConversationChatService:
         if isinstance(exc, PsycopgError):
             return ConversationError(503, "消息存储暂时不可用，请稍后重试。")
         if isinstance(exc, GraphRecursionError):
-            return ConversationError(502, "本轮执行达到步数上限，请查看消息状态后重试。")
+            return ConversationError(
+                502, "本轮执行达到步数上限，请查看消息状态后重试。"
+            )
         return ConversationError(502, "本轮执行失败，请查看消息状态后重试。")
 
     async def list_messages(
@@ -174,6 +224,7 @@ class ConversationChatService:
             "configurable": {"thread_id": conversation_id},
             "recursion_limit": 50,
         }
+        progress: PlanningProgressRecorder | None = None
         try:
             if not await repository.try_lock_messages(conversation_id):
                 raise ConversationError(409, "该会话正在处理消息，请稍后重试。")
@@ -183,23 +234,26 @@ class ConversationChatService:
                 previous_ids = {
                     message.id for message in public_messages(before, before_state)
                 }
-                if payload.retry:
-                    if before.interrupts or not before.next:
-                        raise ConversationError(409, "当前没有可重试的步骤，请发送新的消息。")
-                    graph_input = None
-                elif before.interrupts:
-                    graph_input = Command(resume=payload.content)
-                elif before.next:
-                    raise ConversationError(409, "上轮执行尚未完成，请使用 retry=true 重试。")
-                else:
-                    graph_input = {
-                        "messages": [HumanMessage(content=payload.content, id=str(uuid4()))]
-                    }
+                graph_input = self.prepare_turn(before, payload)
+                progress = PlanningProgressRecorder(
+                    self.session_factory,
+                    conversation_id,
+                    user_id,
+                    frozenset(
+                        name for name in graph.nodes if not name.startswith("__")
+                    ),
+                )
+                await progress.start()
+                execution_config = {
+                    **config,
+                    "run_id": progress.root_id,
+                    "callbacks": [progress],
+                }
                 # Save 自己开启事务；不得复用鉴权/归属查询已经开启的事务。
                 async with self.session_factory() as save_session:
                     await graph.ainvoke(
                         graph_input,
-                        config=config,
+                        config=execution_config,
                         context=TravelBuddyContext(
                             user_id=user_id,
                             conversation_id=conversation_id,
@@ -209,6 +263,13 @@ class ConversationChatService:
                     )
                 after = await graph.aget_state(config)
                 state = public_state(after, conversation_id)
+                if state.status == "pending":
+                    await progress.finish(
+                        "failed",
+                        "本轮已停止，但还有未完成步骤，请查看会话状态后重试。",
+                    )
+                else:
+                    await progress.finish(state.status)
                 items = [
                     message
                     for message in public_messages(after, state)
@@ -217,10 +278,25 @@ class ConversationChatService:
             await repository.touch(conversation_id, user_id)
             await session.commit()
             return MessageTurnOut(**state.model_dump(), items=items)
-        except (ConversationError, SQLAlchemyError):
+        except asyncio.CancelledError:
+            if progress is not None:
+                await progress.fail_safely("本轮执行已取消，请查看会话状态后继续规划。")
+            raise
+        except ConversationError as exc:
+            if progress is not None:
+                await progress.fail_safely(exc.message)
+            raise
+        except SQLAlchemyError:
+            if progress is not None:
+                await progress.fail_safely(
+                    "规划进度存储暂时不可用，请查看会话状态后重试。"
+                )
             raise
         except Exception as exc:  # noqa: BLE001 -- sanitized graph/API boundary
-            raise self._execution_error(exc) from None
+            error = self._execution_error(exc)
+            if progress is not None:
+                await progress.fail_safely(error.message)
+            raise error from None
         finally:
             # 异常和请求取消时也释放事务级锁，checkpoint 保留可恢复的进度。
             if session.in_transaction():

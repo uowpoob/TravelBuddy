@@ -15,6 +15,8 @@ import { conversationsApi, recentMessages } from '../../api/conversations'
 import type { ChatMessage, Conversation, MessageInput, MessageTurn } from '../../types/conversation'
 import { useAuth } from '../auth/AuthProvider'
 import { ItineraryPreview } from './ItineraryPreview'
+import { PlanningProgressPanel } from '../planner/PlanningProgressPanel'
+import { usePlanningProgress } from '../planner/usePlanningProgress'
 
 const statusLabels = {
   completed: '准备好继续规划',
@@ -46,6 +48,12 @@ function ConversationWorkspace({ id }: { id: string }) {
   const [optimistic, setOptimistic] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const {
+    progress,
+    loading: progressLoading,
+    error: progressError,
+    refresh: refreshProgress,
+  } = usePlanningProgress(id, busy)
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [trusted, setTrusted] = useState(false)
   const [error, setError] = useState('')
@@ -55,6 +63,7 @@ function ConversationWorkspace({ id }: { id: string }) {
   const editor = useRef<HTMLTextAreaElement>(null)
   const messageEnd = useRef<HTMLDivElement>(null)
   const scrollToEnd = useRef(true)
+  const progressWasRunning = useRef(false)
 
   useEffect(() => {
     mounted.current = true
@@ -89,12 +98,45 @@ function ConversationWorkspace({ id }: { id: string }) {
   }, [id, token, revision, expireSession])
 
   useEffect(() => {
+    if (!progress) return
+    if (progress.status === 'running') {
+      progressWasRunning.current = true
+      return
+    }
+    if (busy || loading || !progressWasRunning.current) return
+    progressWasRunning.current = false
+    const controller = new AbortController()
+    setTrusted(false)
+    recentMessages(token!, id, controller.signal)
+      .then((page) => {
+        if (controller.signal.aborted) return
+        setTurn((current) => ({ ...page, items: mergeMessages(current?.items ?? [], page.items) }))
+        setOffset((current) => Math.min(current, page.offset))
+        setTrusted(true)
+      })
+      .catch((failure) => {
+        if (controller.signal.aborted) return
+        if (failure instanceof ApiError && failure.status === 401) expireSession()
+        else setError(failure instanceof Error ? failure.message : '请刷新会话读取最新回复。')
+      })
+    return () => controller.abort()
+  }, [progress?.status, busy, loading, id, token, expireSession])
+
+  useEffect(() => {
     if (scrollToEnd.current)
       messageEnd.current?.scrollIntoView?.({ behavior: 'smooth', block: 'end' })
   }, [turn?.items, optimistic, busy])
 
   async function submit(input: MessageInput) {
-    if (lock.current || loading || !trusted || !turn) return
+    if (
+      lock.current ||
+      loading ||
+      progressLoading ||
+      progress?.status === 'running' ||
+      !trusted ||
+      !turn
+    )
+      return
     if (
       'content' in input &&
       (!input.content?.trim() || input.content.length > 10000 || turn.status === 'pending')
@@ -164,7 +206,15 @@ function ConversationWorkspace({ id }: { id: string }) {
 
   useEffect(() => {
     const content = initialMessage.current
-    if (!content || !trusted || loading || !turn) return
+    if (
+      !content ||
+      !trusted ||
+      loading ||
+      progressLoading ||
+      progress?.status === 'running' ||
+      !turn
+    )
+      return
     initialMessage.current = undefined
     navigate(`/app/conversations/${id}`, { replace: true, state: null })
     if (turn.items.length === 0 && turn.status === 'completed') {
@@ -173,7 +223,7 @@ function ConversationWorkspace({ id }: { id: string }) {
     } else {
       setDraft(content)
     }
-  }, [trusted, loading, turn, id, navigate])
+  }, [trusted, loading, progressLoading, progress?.status, turn, id, navigate])
 
   async function loadOlder() {
     if (lock.current || loading || offset === 0) return
@@ -200,8 +250,9 @@ function ConversationWorkspace({ id }: { id: string }) {
   }
 
   const pending = turn?.status === 'pending'
+  const executing = busy || progress?.status === 'running'
   const approval = turn?.status === 'waiting_approval'
-  const disabled = busy || loading || loadingOlder || !trusted || pending
+  const disabled = executing || loading || progressLoading || loadingOlder || !trusted || pending
   const interrupt = turn?.interrupt
   const saved = turn?.saved_itinerary_id != null
 
@@ -215,7 +266,7 @@ function ConversationWorkspace({ id }: { id: string }) {
           <span className="eyebrow">YOUR JOURNEY, TOGETHER</span>
           <h1>{conversation?.title || '旅行会话'}</h1>
           <p>
-            {busy
+            {executing
               ? '正在安排你的旅程，请稍候…'
               : turn
                 ? statusLabels[turn.status]
@@ -225,11 +276,24 @@ function ConversationWorkspace({ id }: { id: string }) {
         <button
           className="button button-secondary"
           disabled={busy || loading || loadingOlder}
-          onClick={() => setRevision((value) => value + 1)}
+          onClick={() => {
+            setRevision((value) => value + 1)
+            refreshProgress()
+          }}
         >
           <RefreshCw size={16} /> 刷新会话
         </button>
       </div>
+      <Link className="text-link" to={`/app/workflow?conversation=${encodeURIComponent(id)}`}>
+        查看规划节点
+      </Link>
+      {progressLoading && <p className="conversation-loading">正在读取节点状态…</p>}
+      {progressError && (
+        <p className="conversation-error" role="alert">
+          {progressError}
+        </p>
+      )}
+      {progress && <PlanningProgressPanel progress={progress} />}
       <section className="panel chat-panel" aria-label="旅行对话">
         <div className="chat-panel-heading">
           <span>
@@ -257,7 +321,7 @@ function ConversationWorkspace({ id }: { id: string }) {
           {offset > 0 && (
             <button
               className="chat-older"
-              disabled={busy || loadingOlder || loading}
+              disabled={executing || loadingOlder || loading}
               onClick={() => void loadOlder()}
             >
               {loadingOlder ? '正在读取…' : '查看更早的消息'}
@@ -284,18 +348,18 @@ function ConversationWorkspace({ id }: { id: string }) {
               <p className="chat-bubble">{optimistic}</p>
             </article>
           )}
-          {busy && (
+          {executing && (
             <div className="chat-thinking" role="status">
               <LoaderCircle className="spin" size={17} />
               <div>
                 <strong>正在为你规划…</strong>
-                <p>会在本轮完成后展示回复，通常需要一些时间。</p>
+                <p>上方会持续更新节点状态，本轮结束后展示回复。</p>
               </div>
             </div>
           )}
           <div ref={messageEnd} />
         </div>
-        {interrupt && trusted && !busy && (
+        {interrupt && trusted && !executing && (
           <div className="chat-guidance">
             <strong>{approval ? '这个方案符合你的期待吗？' : '还需要补充一点旅行信息'}</strong>
             <p>{interrupt.question}</p>
@@ -308,7 +372,9 @@ function ConversationWorkspace({ id }: { id: string }) {
             )}
           </div>
         )}
-        {interrupt?.itinerary && trusted && !busy && <ItineraryPreview interrupt={interrupt} />}
+        {interrupt?.itinerary && trusted && !executing && (
+          <ItineraryPreview interrupt={interrupt} />
+        )}
         {saved && (
           <div className="chat-saved" role="status">
             <CheckCircle2 size={20} />
@@ -324,7 +390,7 @@ function ConversationWorkspace({ id }: { id: string }) {
             </div>
           </div>
         )}
-        {pending && trusted && !busy && (
+        {pending && trusted && !executing && (
           <div className="chat-pending">
             <div>
               <strong>上轮还有未完成的步骤</strong>
@@ -339,7 +405,7 @@ function ConversationWorkspace({ id }: { id: string }) {
             </button>
           </div>
         )}
-        {approval && trusted && !busy && (
+        {approval && trusted && !executing && (
           <div className="chat-approval-actions">
             <button
               className="button button-primary"
@@ -392,7 +458,7 @@ function ConversationWorkspace({ id }: { id: string }) {
           <div>
             <span>Enter 发送 · Shift + Enter 换行</span>
             <button className="button button-primary" disabled={disabled || !draft.trim()}>
-              <Send size={16} /> {busy ? '正在处理…' : '发送消息'}
+              <Send size={16} /> {executing ? '正在处理…' : '发送消息'}
             </button>
           </div>
         </form>

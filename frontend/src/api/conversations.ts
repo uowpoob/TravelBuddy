@@ -1,5 +1,11 @@
 import { ApiError } from './auth'
-import type { Conversation, MessageInput, MessagePage, MessageTurn } from '../types/conversation'
+import type {
+  Conversation,
+  MessageInput,
+  MessagePage,
+  MessageTurn,
+  PlanningProgress,
+} from '../types/conversation'
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
@@ -39,6 +45,8 @@ async function request<T>(token: string, path: string, options: RequestInit = {}
 }
 
 export const conversationsApi = {
+  progress: (token: string, id: string, signal?: AbortSignal) =>
+    request<PlanningProgress>(token, `/${encodeURIComponent(id)}/progress`, { signal }),
   create: (token: string, title = '新旅行') =>
     request<Conversation>(token, '', { method: 'POST', body: JSON.stringify({ title }) }),
   list: (token: string, offset = 0, signal?: AbortSignal) =>
