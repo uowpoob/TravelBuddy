@@ -37,7 +37,10 @@ def build_trip_graph(
     Understand 提取与合并需求；Clarify 暂停并将回答交回 Understand。
     Confirm 展示行程并暂停；确认后进入 Save，修改后返回 Understand。
     暂停恢复需要入口传入 checkpointer，并复用同一 thread_id。
-    Save 通过运行上下文的数据库 session 幂等保存；最多自动修订两轮。
+    Reviewer 宽松审核基本需求；通过后 Confirm，明显问题最多修订一次。
+    needs_user 或修订未解决的问题进入 Clarify，不强制放行。
+    用户在 Confirm 接受或主动提出修改。
+    Save 通过运行上下文的数据库 session 幂等保存。
     """
     required_agents = {"researcher", "context_analyst", "planner", "reviewer"}
     missing_agents = required_agents.difference(agents)

@@ -1,9 +1,8 @@
-from typing import Literal, cast
+from typing import Literal
 
 from backend.app.graph.state import TripState
-from backend.app.schemas.review import ReviewResult
 
-MAX_REVISIONS = 2
+MAX_REVISIONS = 1
 
 
 def route_after_understand(
@@ -16,11 +15,13 @@ def route_after_understand(
 
 
 def route_after_review(state: TripState) -> Literal["confirm", "planner", "clarify"]:
-    """审核节点负责产出 ReviewResult；主图只决定后续路径。"""
-    review = cast(ReviewResult, state["review_result"])
+    """通过才确认；可修复问题有限修订；真实取舍及修订未解决的问题进入澄清。"""
+    review = state.get("review_result")
+    if review is None:
+        raise ValueError("尚未产生审核结果，不能进入确认。")
     if review.decision == "pass":
         return "confirm"
-    if review.decision == "revise" and state["revision_count"] < MAX_REVISIONS:
+    if review.decision == "revise" and state.get("revision_count", 0) < MAX_REVISIONS:
         return "planner"
     return "clarify"
 
