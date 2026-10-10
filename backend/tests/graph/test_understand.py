@@ -58,6 +58,43 @@ def user_message(content, message_id="new-turn"):
 
 
 @pytest.mark.asyncio
+async def test_first_message_generates_summary_title_and_later_messages_preserve_it(
+    runtime,
+):
+    model, extractor = extraction_model(
+        new_trip=True,
+        updated_fields=["destination_city", "days"],
+        trip_request=TripRequest(destination_city="杭州", days=3),
+        conversation_title="杭州三天西湖慢游",
+    )
+    first = user_message("想去杭州玩三天，看看西湖，行程轻松些", "first")
+    node = UnderstandNode(model)
+    result = await node({"messages": [first]}, runtime, {})
+    assert result["conversation_title"] == "杭州三天西湖慢游"
+    payload = json.loads(extractor.ainvoke.await_args.args[0][1].content)
+    assert payload["generate_conversation_title"] is True
+    followup = await node(
+        {**result, "messages": [first, user_message("改去成都", "second")]}, runtime, {}
+    )
+    assert followup["conversation_title"] == result["conversation_title"]
+    payload = json.loads(extractor.ainvoke.await_args.args[0][1].content)
+    assert payload["generate_conversation_title"] is False
+
+
+@pytest.mark.asyncio
+async def test_title_stays_unset_when_model_omits_it(runtime):
+    model, _ = extraction_model(
+        new_trip=True,
+        updated_fields=["destination_city", "days", "preferences"],
+        trip_request=TripRequest(destination_city="杭州", days=3, preferences=["慢游"]),
+    )
+    result = await UnderstandNode(model)(
+        {"messages": [user_message("想去杭州玩三天，慢慢逛")]}, runtime, {}
+    )
+    assert result["conversation_title"] is None
+
+
+@pytest.mark.asyncio
 async def test_empty_input_requests_required_information_without_model(runtime):
     model = MagicMock()
     result = await UnderstandNode(model)({}, runtime, {})

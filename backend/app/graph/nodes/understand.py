@@ -44,6 +44,11 @@ class UnderstandNode:
         current = state.get("trip_request", TripRequest())
         previous = current
         messages = state.get("messages", [])
+        title = state.get("conversation_title")
+        generate_title = (
+            not title
+            and sum(isinstance(message, HumanMessage) for message in messages) == 1
+        )
         latest = next(
             (
                 message
@@ -72,6 +77,7 @@ class UnderstandNode:
             itinerary = state.get("itinerary")
             candidates = state.get("candidates")
             payload = {
+                "generate_conversation_title": generate_title,
                 "timezone": "Asia/Shanghai",
                 "current_date": datetime.now(timezone(timedelta(hours=8)))
                 .date()
@@ -117,6 +123,8 @@ class UnderstandNode:
                 for field in understanding.updated_fields
             }
             current = TripRequest.model_validate({**base.model_dump(), **updates})
+            if generate_title:
+                title = understanding.conversation_title or None
             question = (
                 understanding.clarification_question.strip()
                 if understanding.clarification_question
@@ -167,6 +175,7 @@ class UnderstandNode:
             )
         itinerary = None if reset else state.get("itinerary")
         return {
+            "conversation_title": title,
             "changed_fields": changed_fields,
             "revision_request": str(latest.content) if latest is not None else None,
             "research_required": research_required,

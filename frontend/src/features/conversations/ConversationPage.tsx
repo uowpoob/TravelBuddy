@@ -77,7 +77,7 @@ function ConversationWorkspace({ id }: { id: string }) {
     ])
       .then(([detail, page]) => {
         if (controller.signal.aborted) return
-        setConversation(detail)
+        setConversation(page.title ? { ...detail, title: page.title } : detail)
         scrollToEnd.current = true
         setTurn(page)
         setOffset(page.offset)
@@ -112,6 +112,7 @@ function ConversationWorkspace({ id }: { id: string }) {
         if (controller.signal.aborted) return
         setTurn((current) => ({ ...page, items: mergeMessages(current?.items ?? [], page.items) }))
         setOffset((current) => Math.min(current, page.offset))
+        if (page.title) setConversation((current) => current && { ...current, title: page.title! })
         setTrusted(true)
       })
       .catch((failure) => {
@@ -157,6 +158,8 @@ function ConversationWorkspace({ id }: { id: string }) {
         content ? { content } : { retry: true },
       )
       if (!mounted.current) return
+      if (result.title)
+        setConversation((current) => current && { ...current, title: result.title! })
       setTurn((current) => ({
         ...result,
         items: mergeMessages(current?.items ?? [], result.items),
@@ -176,6 +179,7 @@ function ConversationWorkspace({ id }: { id: string }) {
         const page = await recentMessages(token!, id)
         if (!mounted.current) return
         setTurn(page)
+        if (page.title) setConversation((current) => current && { ...current, title: page.title! })
         setOffset(page.offset)
         setTrusted(true)
         const accepted =

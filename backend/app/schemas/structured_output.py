@@ -46,6 +46,10 @@ class RequestUnderstanding(BaseModel):
         description="本轮用户明确新增、修改或清除的字段；未提及的字段不列出。"
     )
     trip_request: TripRequest
+    conversation_title: str | None = Field(
+        default=None,
+        description="需要生成标题时，概括用户旅行意图的简短中文标题；否则为 null。",
+    )
     clarification_question: str | None = Field(
         default=None, description="存在歧义或冲突时询问用户；没有时为 null。"
     )

@@ -9,6 +9,7 @@ from backend.app.api.dependencies import get_current_user, get_session
 from backend.app.models import User
 from backend.app.schemas.conversation import (
     ConversationCreate,
+    ConversationCreated,
     ConversationMessagesOut,
     ConversationPublic,
     MessageCreate,
@@ -52,19 +53,26 @@ async def get_planning_progress(
         ) from None
 
 
-@router.post("", response_model=ConversationPublic, status_code=201)
+@router.post("", response_model=ConversationCreated, status_code=201)
 async def create(
     payload: ConversationCreate,
+    response: Response,
     user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> ConversationPublic:
+) -> ConversationCreated:
     try:
-        conversation = await create_conversation(session, user.id, payload.title)
+        conversation, reused = await create_conversation(
+            session, user.id, payload.title
+        )
     except SQLAlchemyError:
         raise HTTPException(
             status_code=503, detail="数据库暂时不可用，请稍后重试。"
         ) from None
-    return ConversationPublic.model_validate(conversation)
+    if reused:
+        response.status_code = 200
+    return ConversationCreated(
+        **ConversationPublic.model_validate(conversation).model_dump(), reused=reused
+    )
 
 
 @router.get("", response_model=list[ConversationPublic])

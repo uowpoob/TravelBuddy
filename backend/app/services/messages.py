@@ -50,6 +50,7 @@ def public_state(snapshot: StateSnapshot, conversation_id: str) -> ConversationS
         status = "pending" if snapshot.next else "completed"
     return ConversationStateOut(
         conversation_id=conversation_id,
+        title=snapshot.values.get("conversation_title"),
         status=status,
         interrupt=interruption,
         saved_itinerary_id=snapshot.values.get("saved_itinerary_id"),
@@ -275,7 +276,7 @@ class ConversationChatService:
                     for message in public_messages(after, state)
                     if message.id not in previous_ids
                 ]
-            await repository.touch(conversation_id, user_id)
+            await repository.touch(conversation_id, user_id, state.title)
             await session.commit()
             return MessageTurnOut(**state.model_dump(), items=items)
         except asyncio.CancelledError:

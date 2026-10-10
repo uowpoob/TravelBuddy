@@ -25,6 +25,15 @@ function response(body: unknown, status = 200) {
 
 function start(handler: (url: string, options: RequestInit) => Response | Promise<Response>) {
   const fetch = vi.fn((url: string, options: RequestInit) => {
+    if (url.endsWith('/progress'))
+      return Promise.resolve(
+        response({
+          conversation_id: conversation.id,
+          status: 'idle',
+          nodes: {},
+          error: null,
+        }),
+      )
     if (url.startsWith('/api/v1/itineraries?')) return Promise.resolve(response([]))
     if (url === '/api/v1/auth/me')
       return Promise.resolve(
