@@ -13,3 +13,7 @@ dist/
 node_modules/
 coverage/
 *.tsbuildinfo
+
+# Runtime data and private deployment files (deployment source stays tracked).
+deploy/backups/
+deploy/data/
