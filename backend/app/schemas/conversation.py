@@ -24,6 +24,10 @@ class ConversationPublic(BaseModel):
     updated_at: datetime
 
 
+class ConversationCreated(ConversationPublic):
+    reused: bool = False
+
+
 class MessageCreate(BaseModel):
     content: (
         Annotated[
@@ -60,6 +64,7 @@ class ConversationInterruptOut(BaseModel):
 
 class ConversationStateOut(BaseModel):
     conversation_id: UUID
+    title: str | None = None
     status: Literal["completed", "waiting_clarification", "waiting_approval", "pending"]
     interrupt: ConversationInterruptOut | None = None
     saved_itinerary_id: int | None = None

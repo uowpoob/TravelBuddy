@@ -5,6 +5,7 @@ import { ApiError } from '../../api/auth'
 import { conversationsApi } from '../../api/conversations'
 import type { Conversation } from '../../types/conversation'
 import { useAuth } from '../auth/AuthProvider'
+import { useToast } from '../../components/common/ToastProvider'
 
 const dateFormat = new Intl.DateTimeFormat('zh-CN', {
   month: 'short',
@@ -17,6 +18,7 @@ const dateFormat = new Intl.DateTimeFormat('zh-CN', {
 export function ConversationsPage() {
   const { token, expireSession } = useAuth()
   const navigate = useNavigate()
+  const toast = useToast()
   const [items, setItems] = useState<Conversation[]>([])
   const [title, setTitle] = useState('')
   const [loading, setLoading] = useState(true)
@@ -86,7 +88,9 @@ export function ConversationsPage() {
     setError('')
     try {
       const conversation = await conversationsApi.create(token!, title.trim() || '新旅行')
-      if (mounted.current) navigate(`/app/conversations/${conversation.id}`)
+      if (!mounted.current) return
+      if (conversation.reused) toast('已经有新对话了。')
+      navigate(`/app/conversations/${conversation.id}`)
     } catch (failure) {
       if (!mounted.current) return
       if (failure instanceof ApiError && failure.status === 401) expireSession()

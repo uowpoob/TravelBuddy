@@ -1,6 +1,7 @@
 import { ApiError } from './auth'
 import type {
   Conversation,
+  ConversationCreated,
   MessageInput,
   MessagePage,
   MessageTurn,
@@ -48,7 +49,7 @@ export const conversationsApi = {
   progress: (token: string, id: string, signal?: AbortSignal) =>
     request<PlanningProgress>(token, `/${encodeURIComponent(id)}/progress`, { signal }),
   create: (token: string, title = '新旅行') =>
-    request<Conversation>(token, '', { method: 'POST', body: JSON.stringify({ title }) }),
+    request<ConversationCreated>(token, '', { method: 'POST', body: JSON.stringify({ title }) }),
   list: (token: string, offset = 0, signal?: AbortSignal) =>
     request<Conversation[]>(token, `?offset=${offset}&limit=20`, { signal }),
   get: (token: string, id: string, signal?: AbortSignal) =>

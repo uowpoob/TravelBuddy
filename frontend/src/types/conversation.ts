@@ -5,6 +5,10 @@ export interface Conversation {
   updated_at: string
 }
 
+export interface ConversationCreated extends Conversation {
+  reused: boolean
+}
+
 export interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
@@ -50,6 +54,7 @@ export interface Itinerary {
 
 export interface ConversationState {
   conversation_id: string
+  title?: string | null
   status: 'completed' | 'waiting_clarification' | 'waiting_approval' | 'pending'
   interrupt: {
     type: 'clarify' | 'confirm'

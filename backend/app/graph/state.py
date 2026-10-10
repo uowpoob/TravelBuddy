@@ -20,6 +20,7 @@ class TripState(MessagesState, total=False):
     missing_fields: list[str]
     clarification_question: str | None
     last_understood_message_id: str | None
+    conversation_title: str | None
 
     # 本轮实际变更及旧方案对应的需求，用于局部修订和证据复用。
     changed_fields: list[str]

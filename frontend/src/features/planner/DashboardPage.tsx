@@ -97,6 +97,7 @@ export function DashboardPage() {
     try {
       const conversation = await conversationsApi.create(token!, title)
       if (!mounted.current) return
+      if (conversation.reused) toast('已经有新对话了。')
       reset()
       navigate(`/app/conversations/${conversation.id}`, { state: { initialMessage } })
     } catch (failure) {

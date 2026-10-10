@@ -127,6 +127,10 @@ function start(path = `/app/conversations/${id}`, state?: object) {
 function mockServer(handler: (url: string, options: RequestInit) => Response | Promise<Response>) {
   const fetch = vi.fn((url: string, options: RequestInit) => {
     if (url === '/api/v1/auth/me') return Promise.resolve(response(user))
+    if (url === `${base}/progress`)
+      return Promise.resolve(
+        response({ conversation_id: id, status: 'idle', nodes: {}, error: null }),
+      )
     if (url.startsWith('/api/v1/itineraries?')) return Promise.resolve(response([]))
     if (url === base) return Promise.resolve(response(conversation))
     return Promise.resolve(handler(url, options))
@@ -138,6 +142,55 @@ function mockServer(handler: (url: string, options: RequestInit) => Response | P
 afterEach(() => vi.unstubAllGlobals())
 
 describe('旅行会话', () => {
+  it('重复新建打开已有空会话并提示已经有新对话了', async () => {
+    const fetch = mockServer((url, options) => {
+      if (options.method === 'POST') return response({ ...conversation, reused: true })
+      if (url.endsWith('/messages?offset=0&limit=50')) return response(empty)
+      return response([conversation])
+    })
+    start('/app/conversations')
+    await screen.findByRole('heading', { name: conversation.title })
+    await userEvent.click(screen.getByRole('button', { name: '创建会话' }))
+    expect(await screen.findByText('已经有新对话了。')).toBeVisible()
+    const input = await screen.findByRole('textbox', { name: '发送旅行消息' })
+    await waitFor(() => expect(input).toBeEnabled())
+    expect(fetch.mock.calls.filter(([, options]) => options.method === 'POST')).toHaveLength(1)
+  })
+
+  it('首条消息发送后立即展示概括标题', async () => {
+    mockServer((_url, options) =>
+      options.method === 'POST'
+        ? response({ ...clarification, title: '杭州三天西湖慢游' })
+        : response(empty),
+    )
+    start()
+    const input = await screen.findByRole('textbox', { name: '发送旅行消息' })
+    await waitFor(() => expect(input).toBeEnabled())
+    await userEvent.type(input, '想去杭州玩三天，看看西湖，行程轻松一些{Enter}')
+    expect(await screen.findByRole('heading', { name: '杭州三天西湖慢游' })).toBeVisible()
+  })
+
+  it('首页复用空会话时提示并继续发送表单消息', async () => {
+    const fetch = mockServer((url, options) => {
+      if (url === '/api/v1/conversations' && options.method === 'POST')
+        return response({ ...conversation, reused: true })
+      if (options.method === 'POST') return response({ ...clarification, title: '杭州旅行' })
+      if (url.endsWith('/messages?offset=0&limit=50')) return response(empty)
+      return response([])
+    })
+    start('/app')
+    await screen.findByRole('heading', { name: /嗨，traveler/ })
+    await userEvent.type(screen.getByLabelText('想去哪里'), '杭州')
+    await userEvent.click(screen.getByRole('button', { name: '开始规划' }))
+    expect(await screen.findByText('已经有新对话了。')).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '杭州旅行' })).toBeVisible()
+    expect(
+      fetch.mock.calls.filter(
+        ([url, options]) => url === `${base}/messages` && options.method === 'POST',
+      ),
+    ).toHaveLength(1)
+  })
+
   it('会话列表支持创建、查看详情，所有请求携带当前用户令牌', async () => {
     const fetch = mockServer((url, options) => {
       if (options.method === 'POST') return response(conversation, 201)
