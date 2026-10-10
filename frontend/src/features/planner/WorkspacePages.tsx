@@ -1,7 +1,8 @@
-import { CalendarDays, Check, Compass, LogOut, Route, Sparkles, UserRound } from 'lucide-react'
+import { CalendarDays, Check, Compass, LogOut, Sparkles, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../auth/AuthProvider'
-import { ThemeCards, WorkflowPreview } from './TravelPreview'
+import { ThemeCards } from './TravelPreview'
+export { WorkflowPage } from './WorkflowPage'
 
 function PageTitle({
   eyebrow,
@@ -48,26 +49,6 @@ export function ExplorePage() {
         <div>
           <h3>更多目的地，正在路上</h3>
           <p>目的地搜索、收藏和个性化推荐即将开放。</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function WorkflowPage() {
-  return (
-    <div className="page-enter">
-      <PageTitle
-        eyebrow="FROM AN IDEA TO A JOURNEY"
-        title="旅程规划进度"
-        description="每一步都清晰可见，每一个想法都被认真考虑。"
-      />
-      <WorkflowPreview expanded />
-      <div className="workflow-coming panel">
-        <Route size={23} />
-        <div>
-          <h3>规划过程，即将清晰呈现</h3>
-          <p>未来可以查看实时进度、待确认的问题，以及每一步产生的旅行方案。</p>
         </div>
       </div>
     </div>

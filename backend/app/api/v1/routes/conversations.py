@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +14,7 @@ from backend.app.schemas.conversation import (
     MessageCreate,
     MessageTurnOut,
 )
+from backend.app.schemas.planning import PlanningProgressOut
 from backend.app.services.conversations import (
     create_conversation,
     get_user_conversation,
@@ -29,6 +30,26 @@ def get_chat_service(request: Request) -> ConversationChatService:
         getattr(request.app.state, "trip_graph", None),
         getattr(request.app.state, "session_factory", None),
     )
+
+
+@router.get("/{conversation_id}/progress", response_model=PlanningProgressOut)
+async def get_planning_progress(
+    conversation_id: UUID,
+    response: Response,
+    user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    chat: Annotated[ConversationChatService, Depends(get_chat_service)],
+) -> PlanningProgressOut:
+    """读取会话当前节点状态；消息执行期间可独立查询。"""
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return await chat.get_progress(session, user.id, str(conversation_id))
+    except ConversationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="数据库暂时不可用，请稍后重试。"
+        ) from None
 
 
 @router.post("", response_model=ConversationPublic, status_code=201)

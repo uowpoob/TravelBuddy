@@ -76,3 +76,12 @@ export interface MessagePage extends MessageTurn {
 }
 
 export type MessageInput = { content: string; retry?: never } | { retry: true; content?: never }
+
+export type PlanningNodeStatus = 'pending' | 'running' | 'completed' | 'failed' | 'waiting'
+
+export interface PlanningProgress {
+  conversation_id: string
+  status: 'idle' | 'running' | 'waiting_clarification' | 'waiting_approval' | 'completed' | 'failed'
+  nodes: Record<string, PlanningNodeStatus>
+  error: string | null
+}

@@ -23,10 +23,15 @@ class ConversationPublic(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class MessageCreate(BaseModel):
-    content: Annotated[
-        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=10000)
-    ] | None = None
+    content: (
+        Annotated[
+            str,
+            StringConstraints(strip_whitespace=True, min_length=1, max_length=10000),
+        ]
+        | None
+    ) = None
     retry: bool = Field(default=False, strict=True)
 
     @model_validator(mode="after")
@@ -55,9 +60,7 @@ class ConversationInterruptOut(BaseModel):
 
 class ConversationStateOut(BaseModel):
     conversation_id: UUID
-    status: Literal[
-        "completed", "waiting_clarification", "waiting_approval", "pending"
-    ]
+    status: Literal["completed", "waiting_clarification", "waiting_approval", "pending"]
     interrupt: ConversationInterruptOut | None = None
     saved_itinerary_id: int | None = None
     saved_itinerary_version: int | None = None

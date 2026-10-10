@@ -58,7 +58,12 @@ class PlanNode:
             config=config,
             context=runtime.context,
         )
+        structured = result["structured_response"]
+        if structured is None:
+            raise RuntimeError(
+                "模型输出错误"
+            )
         return {
             "messages": result["messages"],
-            "itinerary": Itinerary.model_validate(result["structured_response"]),
+            "itinerary": Itinerary.model_validate(structured),
         }
