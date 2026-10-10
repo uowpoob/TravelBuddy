@@ -388,18 +388,22 @@ async def main(args) -> int:
         and not settings.LANGGRAPH_PG_DSN.get_secret_value().strip()
     ):
         raise ChatSetupError("跨进程恢复已有会话需要配置 LANGGRAPH_PG_DSN。")
+    client = AmapMCPClient(amap_settings)
     engine = create_engine(settings)
     try:
         factory = async_sessionmaker(engine, expire_on_commit=False)
         async with open_checkpointer(settings) as saver:
             print(f"Checkpoint：{type(saver).__name__}", flush=True)
             print("正在发现高德工具并初始化 Agent…", flush=True)
-            agents = await build_agents(AmapMCPClient(amap_settings))
+            agents = await build_agents(client)
             graph = build_trip_graph(agents, checkpointer=saver)
             identity = await prepare_conversation(factory, args)
             return await chat_loop(graph, factory, identity, args)
     finally:
-        await engine.dispose()
+        try:
+            await client.close()
+        finally:
+            await engine.dispose()
 
 
 def cli(argv=None) -> int:

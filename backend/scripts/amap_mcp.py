@@ -47,7 +47,11 @@ def parse_args() -> argparse.Namespace:
 
 
 async def main(args: argparse.Namespace) -> int:
-    client = AmapMCPClient()
+    async with AmapMCPClient() as client:
+        return await _run(args, client)
+
+
+async def _run(args: argparse.Namespace, client: AmapMCPClient) -> int:
     output: Any
     if args.command == "list":
         tools = await client.list_tools()

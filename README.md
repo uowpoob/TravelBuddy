@@ -106,7 +106,19 @@ GD_MCP_TIMEOUT_SECONDS=30
 
 客户端自动将 Key 加入鉴权参数，`GD_MCP_URL` 不需要填写密钥。
 配置与错误信息不打印鉴权 URL，SDK 的 HTTP 日志会隐藏此 Key。
-超时按每个 MCP 请求计算。每次操作在同一异步任务内建立和关闭会话，
+超时按每个 MCP 请求计算。缓存未命中时，在同一异步任务内建立和关闭会话。
+客户端通过 Redis 共享只读工具的成功结果及完整工具列表，TTL 统一为 1 小时，
+命中不延长有效期。缓存键包含工具名和按对象键排序的参数 JSON，不使用哈希；
+不同关键词、类别、半径、页码等参数产生不同缓存键，错误结果和异常不缓存。
+默认 `REDIS_URL=redis://127.0.0.1:6379/0`，其他配置见 `.env.example`。
+`GD_MCP_CACHE_ENABLED=false`、空 `REDIS_URL` 或 TTL 为 0 可关闭缓存。
+Redis 故障或缓存格式损坏时直接查询高德；Redis 操作默认最多等待 0.5 秒。
+开发与生产使用不同 `GD_MCP_CACHE_NAMESPACE`，同一命名空间应使用相同高德服务配置。
+缓存格式调整或需要整体失效时更换命名空间版本，旧缓存按 TTL 自行过期。
+FastAPI 退出时关闭 Redis 连接池；独立 Python 调用请使用
+`async with AmapMCPClient() as client:`，或在结束时 `await client.close()`。
+本阶段只实现缓存，相同参数的并发未命中请求仍会分别查询高德。
+
 FastAPI 启动时，应用、高德与 DeepSeek 配置完整则统一执行工具发现并创建四个 Agent，
 保存在 `app.state.agents`，并注入四个专业子图，组装后缓存总图到 `app.state.trip_graph`。
 初始化不执行模型推理、地点、天气或路线查询。

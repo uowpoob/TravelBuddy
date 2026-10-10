@@ -28,7 +28,7 @@ def runtime_resources(monkeypatch):
         "AmapMCPSettings",
         lambda: SimpleNamespace(api_key=SecretStr("test-key")),
     )
-    client = object()
+    client = SimpleNamespace(close=AsyncMock())
     monkeypatch.setattr(lifespan_module, "AmapMCPClient", lambda settings: client)
     monkeypatch.setattr(lifespan_module, "create_engine", lambda settings: engine)
     monkeypatch.setattr(lifespan_module, "async_sessionmaker", MagicMock())
@@ -61,6 +61,7 @@ async def test_lifespan_caches_parent_graph_without_executing_agents(runtime_res
     assert app.state.trip_graph is None
     assert app.state.agents is None
     engine.dispose.assert_awaited_once()
+    client.close.assert_awaited_once()
 
 
 @pytest.mark.asyncio

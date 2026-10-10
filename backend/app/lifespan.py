@@ -39,6 +39,7 @@ async def lifespan(app: FastAPI):
         else:
             if mcp_settings.api_key.get_secret_value().strip():
                 app.state.amap_mcp_client = AmapMCPClient(mcp_settings)
+                checkpoint_stack.push_async_callback(app.state.amap_mcp_client.close)
 
         try:
             settings = Settings()
