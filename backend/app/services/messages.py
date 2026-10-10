@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 from uuid import uuid4
 
 from langchain_core.messages import AIMessage, HumanMessage
@@ -8,6 +9,7 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command, StateSnapshot
 from openai import APIStatusError
 from psycopg import Error as PsycopgError
+from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -186,6 +188,25 @@ class ConversationChatService:
                     502,
                     "模型服务余额不足，暂时无法继续规划；处理模型账户余额后可重试本轮。",
                 )
+        elif isinstance(exc, ValidationError):
+            # 仅记录 schema 和字段位置；不输出输入值、错误正文或校验上下文。
+            fields = [
+                {"loc": error["loc"], "type": error["type"]}
+                for error in exc.errors(
+                    include_input=False, include_context=False, include_url=False
+                )[:20]
+            ]
+            # 不格式化完整 traceback，避免异常正文或代码行中的秘密进入日志。
+            frames = [
+                {"function": frame.name, "line": frame.lineno}
+                for frame in traceback.extract_tb(exc.__traceback__)[-8:]
+            ]
+            logger.error(
+                "消息流程执行失败（ValidationError）。schema=%s fields=%s frames=%s",
+                exc.title,
+                fields,
+                frames,
+            )
         else:
             logger.error("消息流程执行失败（%s）。", type(exc).__name__)
         if isinstance(exc, TimeoutError):

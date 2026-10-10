@@ -1,370 +1,254 @@
-# TravelBuddy
+# TravelBuddy · 你的专属旅行伙伴
 
-旅行规划应用，使用 React/Vite 前端、FastAPI 后端、PostgreSQL 和高德地图，结合模型完成需求澄清、地点调研、行程规划、审核修订和确认保存。Python 依赖由 uv 管理。
+> 从一个旅行想法，到一份可以查看、调整和保存的行程。
 
-## Docker 本地部署与云服务器部署
+TravelBuddy 是一个基于大语言模型与多 Agent 协作的旅行规划应用。你可以用自然语言描述目的地、出行时间和旅行偏好，系统会通过多轮对话补全需求，结合高德地图的地点、天气与路线信息生成每日行程，并在确认后保存到个人旅行空间。
 
-支持通过 Docker Compose 一起启动网页、后端、PostgreSQL 与 Redis，自动执行数据库迁移和 checkpoint 初始化。部署配置与阿里云 Ubuntu 操作步骤见 [部署说明](deploy/README.md)。本地部署者填写自己的模型与高德 Key；云端演示站使用站点所有者在服务器配置的 Key。
+## 一、项目功能
 
-## 环境
+| 功能 | 说明 |
+| --- | --- |
+| 旅行工作台 | 填写目的地、日期、天数、人数、交通方式和旅行想法，快速发起规划；查看近期会话与最新行程地图。 |
+| 对话式需求澄清 | 支持从“想去北京玩几天”这样的简单想法开始，逐步补齐信息，记录偏好、必去地点与其他要求。 |
+| 多 Agent 协作规划 | 分工完成地点调研、出行条件分析、每日路线安排与方案审核，生成包含地点、地址、停留时间、交通耗时和出行提示的方案。 |
+| 方案调整与确认 | 可以继续提出“第二天下午换成室内活动”等修改要求，满意后确认并保存行程。 |
+| 规划进度展示 | 自动更新各节点的执行状态，查看当前正在理解需求、调研地点、安排路线或审核方案。 |
+| 会话与行程管理 | 查看历史对话、继续规划、重试失败步骤；查看已保存的行程版本，删除会话或指定行程版本。 |
+| 地图与真实路线 | 按天查看地点分布，切换步行、骑行、驾车或公交方式，查询道路路线、距离与预计耗时。 |
+| 用户账号 | 支持注册、登录、退出及账号信息查看，会话和行程按用户归属管理。 |
 
-- Python 3.13
-- 虚拟环境：`.venv`
-- 依赖声明：`pyproject.toml`
-- 依赖锁文件：`uv.lock`（提交到 Git）
+当前支持 **1–5 天的旅行规划**。预算和出发城市可以留空；填写预算时，需要明确总预算或人均预算。天气以查询结果覆盖的日期为准，未获取到的费用会显示为“尚未估算”。
 
-## 常用命令
+## 二、项目结构
 
-```powershell
-uv sync
-uv run python examples/hello.py
-uv add <包名>
-uv add --dev <开发工具包名>
+```text
+TravelBuddy/
+├── backend/                    # Python 后端
+│   ├── app/
+│   │   ├── agents/             # 地点调研、出行分析、规划、审核四类 Agent
+│   │   ├── api/                # 认证、会话、行程、地图及健康检查接口
+│   │   ├── core/               # 应用配置、认证与运行时配置
+│   │   ├── db/                 # 数据库连接与会话管理
+│   │   ├── graph/              # LangGraph 主流程、状态与检查点
+│   │   ├── integrations/       # 模型、高德 MCP 与路线接口集成
+│   │   ├── models/             # 用户、会话与行程数据库模型
+│   │   ├── prompts/            # 需求理解与各 Agent 提示词
+│   │   ├── repositories/       # 数据访问层
+│   │   ├── schemas/            # 请求、响应与结构化输出定义
+│   │   └── services/           # 业务逻辑
+│   ├── migrations/            # Alembic 数据库迁移
+│   ├── scripts/               # 密钥初始化、检查点初始化与调试脚本
+│   ├── tests/                 # 后端测试
+│   ├── pic/                   # 项目展示截图
+│   └── __main__.py            # 后端启动入口
+├── frontend/                  # React 前端
+│   ├── src/
+│   │   ├── api/               # 后端接口调用
+│   │   ├── app/               # 应用入口与路由
+│   │   ├── components/        # 布局与公共组件
+│   │   ├── features/          # 认证、工作台、会话、行程与地图页面
+│   │   ├── styles/            # 页面样式
+│   │   ├── types/             # TypeScript 类型定义
+│   │   ├── utils/             # 通用工具
+│   │   └── test/              # 前端测试
+│   └── public/                # 静态资源
+├── deploy/                    # Dockerfile、Nginx 配置与部署说明
+├── docs/                      # 架构、接口与开发文档
+├── mcp_server/                # 预留的对外 MCP 服务目录
+├── evals/                     # 预留的评测目录
+├── compose.yaml               # Docker Compose 服务编排
+├── .env.example               # 本地开发配置模板
+├── pyproject.toml             # Python 依赖与工具配置
+└── uv.lock                    # Python 依赖锁文件
 ```
 
-若终端找不到 uv，可使用 `& "$env:USERPROFILE\.local\bin\uv.exe"` 替代上述命令中的 `uv`。
+后端通过高德远程 MCP 服务调用地图工具，当前无需启动 `mcp_server/`。更详细的模块说明见 [架构文档](docs/ARCHITECTURE.md)。
 
-## PyCharm
+## 三、主要技术
 
-打开本目录，选择 `.venv\Scripts\python.exe` 作为项目解释器。
-使用模块运行配置 `backend`，工作目录选择项目根目录；参数可填 `--reload`。
-入门示例移至 `examples/hello.py`，不再作为后端入口。
+| 层次 | 技术 | 用途 |
+| --- | --- | --- |
+| 前端 | React、TypeScript、Vite | 页面交互、类型约束与前端开发构建。 |
+| 路由与界面 | React Router、Lucide React、CSS | 页面导航、图标与界面样式。 |
+| 后端 | Python、FastAPI、Uvicorn | 提供异步业务 API 与自动生成的接口文档。 |
+| AI 工作流 | LangChain、LangGraph、DeepSeek | 模型调用、工具使用、多 Agent 协作与可暂停恢复的规划流程。 |
+| 数据校验 | Pydantic、Pydantic Settings | 校验业务数据、模型结构化输出与环境配置。 |
+| 地图服务 | 高德 MCP、Web 服务 API、JS API 2.0 | 地点搜索、天气分析、交通路线查询与地图展示。 |
+| 数据存储 | PostgreSQL、SQLAlchemy、Alembic | 保存账号、会话、行程版本并管理数据库迁移。 |
+| 状态持久化 | LangGraph Checkpoint PostgreSQL | 保存规划状态，支持跨请求与重启后的会话恢复。 |
+| 缓存 | Redis | 缓存高德 MCP 工具列表与只读查询结果。 |
+| 身份认证 | JWT、密码加盐哈希 | 用户登录认证与接口访问控制。 |
+| 工程与部署 | uv、pytest、Ruff、Vitest、Docker Compose、Nginx | 依赖管理、测试检查、容器部署与反向代理。 |
 
-## 启动后端
+规划流程由 LangGraph 编排，四个专业 Agent 各自负责一个环节：
 
-```powershell
-uv run python -m backend --reload
+| Agent | 职责 |
+| --- | --- |
+| Researcher | 查询并筛选景点、餐厅、酒店等真实候选地点。 |
+| Context Analyst | 查询天气，整理出行条件与建议。 |
+| Planner | 结合候选地点、交通路线和用户偏好安排每日行程。 |
+| Reviewer | 根据需求与已有证据审核方案，提出修改意见或需要用户补充的问题。 |
+
+```mermaid
+flowchart TD
+    A[用户输入旅行想法] --> B[理解需求]
+    B --> C{信息是否完整}
+    C -->|否| D[向用户澄清]
+    D --> B
+    C -->|是| E[地点调研]
+    C -->|是| F[出行条件分析]
+    E --> G[行程规划]
+    F --> G
+    G --> H[方案审核]
+    H -->|需要修订| G
+    H -->|需要补充信息| D
+    H -->|通过| I[用户确认]
+    I -->|提出修改| B
+    I -->|确认| J[保存行程版本]
 ```
 
-- 健康检查：http://127.0.0.1:8000/health
-- 接口文档：http://127.0.0.1:8000/docs
+自动审核修订最多进行一轮，仍有问题时进入用户澄清。用户也可以在确认阶段继续提出修改要求。
 
-健康检查返回 HTTP 200 和 `{"status":"ok","service":"TravelBuddy"}`。
-此接口只检查 API 进程是否正常响应，不调用模型或高德服务。
+## 四、项目展示
 
-## 注册与登录
+以下截图展示了从登录、发起规划到确认方案和查看路线的使用过程。
 
-已实现 `POST /api/v1/auth/register`、`POST /api/v1/auth/login` 和
-`GET /api/v1/auth/me`，复用现有 users 表。密码只保存加盐哈希，登录返回 Bearer JWT。
-本地签名密钥初始化命令为 `uv run python -m backend.scripts.init_auth`，已有密钥不会被覆盖。
-默认令牌有效期 60 分钟，修改 .env 后需重启后端。
-可在 `/docs` 中注册、登录并使用 Authorize 调用 me。
-请求格式、返回字段和后续接口鉴权方式见 [AUTH.md](docs/AUTH.md)。
+### 登录与注册
 
-## 会话接口
+进入个人旅行空间，管理自己的旅行会话与行程。
 
-已实现 `POST /api/v1/conversations`，使用 Bearer JWT 归属于当前登录用户。
-发送 `{"title":"杭州周末游"}` 或 `{}`（默认“新旅行”），成功返回 201 和会话 UUID、
-标题及时间。
-`GET /api/v1/conversations?offset=0&limit=20` 按更新时间倒序查询当前用户的会话列表；
-`GET /api/v1/conversations/{conversation_id}` 查看详情，不存在或不属于当前用户时返回 404。
-`GET /api/v1/conversations/{conversation_id}/messages` 分页查看对话及澄清/确认状态；
-`POST /api/v1/conversations/{conversation_id}/messages` 发送 `{"content":"想去杭州"}`，
-等待本轮暂停或完成后一次性返回 JSON。相同接口支持回答澄清问题、确认或修改方案，
-未完成的失败步骤可发送 `{"retry":true}` 恢复。
-请求格式与分层说明见 [CONVERSATIONS.md](docs/CONVERSATIONS.md)。
+![TravelBuddy 登录页面](backend/pic/img.png)
 
-## 前端会话联调
+### 旅行工作台
 
-前端已接入会话创建、列表、历史消息、需求澄清、方案修改、确认保存和失败步骤恢复。
-启动后端后，在另一个终端运行：
+填写旅行想法并开始规划，也可以继续最近的会话、预览已保存行程的地点分布。
 
-```powershell
-cd frontend
-npm run dev
+![旅行工作台](backend/pic/img_5.png)
+
+### 旅行会话与规划进度
+
+通过对话补充需求，查看各规划节点的执行状态。
+
+![旅行会话与规划进度](backend/pic/img_1.png)
+
+### 每日行程预览
+
+按天展示地点、地址、停留时间和交通安排。图中为北京三日城市漫步方案。
+
+![每日行程预览](backend/pic/img_2.png)
+
+### 方案确认与调整
+
+查看费用信息和行程提醒，确认保存或继续输入修改要求。
+
+![方案确认与调整](backend/pic/img_3.png)
+
+### 地图与路线
+
+切换日期和交通方式，在地图上查看地点顺序与高德返回的道路路线。
+
+![地图与路线](backend/pic/img_4.png)
+
+## 五、快速开始
+
+### 方式一：Docker 启动
+
+准备好 Docker Engine / Docker Desktop 和 Docker Compose v2，下载项目后进入根目录。
+
+**1. 创建配置文件**
+
+```bash
+cp deploy/.env.example deploy/.env
 ```
 
-打开 http://127.0.0.1:3000，登录后可在首页填写旅行需求并点击“开始规划”，
-或通过侧栏“旅行会话”新建、继续会话。开发代理默认指向 http://127.0.0.1:8000，
-可通过 `frontend/.env.local` 中的 `API_PROXY_TARGET` 修改。
-详细测试流程及错误恢复说明见 [FRONTEND_CONVERSATIONS.md](docs/FRONTEND_CONVERSATIONS.md)。
+Windows PowerShell 使用 `Copy-Item deploy/.env.example deploy/.env`。已有配置时直接编辑现有文件。
 
-## 在终端测试旅行图
+**2. 编辑 `deploy/.env`**
 
-不启动前端或 HTTP 服务，直接输入需求、回答澄清问题、确认并保存：
+| 配置项 | 说明 |
+| --- | --- |
+| `POSTGRES_PASSWORD` | 数据库密码，使用至少 32 个字符的随机十六进制值。 |
+| `AUTH_SECRET_KEY` | JWT 签名密钥，使用独立生成的至少 32 字节随机值。 |
+| `DEEPSEEK_API_KEY` | 模型服务 API Key。 |
+| `DEEPSEEK_BASE_URL` | 模型供应商提供的 API 地址。 |
+| `DEEPSEEK_MODEL` | 供应商支持的模型 ID，需支持工具调用；项目使用非思考模式。 |
+| `GD_API_KEY` | 高德 Web 服务 Key，用于后端地点、天气与路线查询。 |
+| `GD_JSAPI_KEY` | 高德 Web 端 JS API Key，用于前端地图。 |
+| `GD_JSAPI_SECURITY_CODE` | 与 JS API Key 配对的安全密钥。 |
 
-```powershell
-uv run python -m backend.scripts.trip_chat --message "想去杭州"
+可以分别执行两次 `python -c "import secrets; print(secrets.token_hex(32))"`，生成数据库密码和 JWT 密钥并填入配置文件。
+
+**3. 构建并启动**
+
+```bash
+docker compose --env-file deploy/.env config --quiet
+docker compose --env-file deploy/.env up -d --build
+docker compose --env-file deploy/.env ps -a
 ```
 
-默认创建本地调试用户和会话；实际调用已配置的模型和高德 MCP。
-终端显示节点进度、工具名称、确认方案和已保存 ID/版本；支持 `/state`、`/retry`、`/quit`。
-配置 PostgreSQL checkpoint 后可使用用户 ID 和会话 ID 重新打开并恢复。
-完整准备步骤、单轮运行及 PyCharm 配置见 [GRAPH_DEBUG.md](docs/GRAPH_DEBUG.md)。
+首次启动会安装依赖，启动 PostgreSQL 和 Redis，自动完成业务表迁移与检查点初始化，再启动后端和网页。`migrate` 服务正常退出状态为 `Exited (0)`。
 
-## 本地调用高德 MCP
+打开 [http://127.0.0.1:8080](http://127.0.0.1:8080)，注册账号后即可开始使用。云服务器部署和排错步骤见 [部署说明](deploy/README.md)。
 
-后端的 `backend/app/integrations/mcp/` 通过 Streamable HTTP 直接连接高德 MCP。
-接入地址来自[高德官方接入文档](https://lbs.amap.com/api/mcp-server/gettingstarted)。
-`mcp_server/` 保留，后续将 TravelBuddy 完成的行程规划、修改等业务能力封装为对外工具；
-当前调用高德不需要启动本地 MCP Server。前端继续通过 FastAPI 业务 API 获取结果。
+### 方式二：本地开发
 
-在根目录 `.env` 中配置高德 Web 服务 Key；已有 `GD_API_KEY` 可直接复用。
-以下两个配置可选，未填写时使用所示默认值：
+准备 Python 3.13+、uv、Node.js 22.12+ 与 npm，以及可连接的 PostgreSQL 数据库。Redis 用于查询缓存，可以选择启用。
+
+**1. 安装依赖并创建配置**
+
+在项目根目录运行：
+
+```bash
+uv sync --locked
+cp .env.example .env
+```
+
+Windows PowerShell 使用 `Copy-Item .env.example .env`。已有 `.env` 时直接编辑。
+
+填写上表中的模型与高德配置，并配置数据库：
 
 ```dotenv
-GD_API_KEY=YOUR_AMAP_WEB_SERVICE_KEY
-GD_MCP_URL=https://mcp.amap.com/mcp
-GD_MCP_TIMEOUT_SECONDS=30
+DATABASE_DSN=postgresql://travelbuddy:YOUR_PASSWORD@127.0.0.1:5432/travelbuddy
+LANGGRAPH_PG_DSN=postgresql://travelbuddy:YOUR_PASSWORD@127.0.0.1:5432/travelbuddy
+REDIS_URL=redis://127.0.0.1:6379/0
 ```
 
-客户端自动将 Key 加入鉴权参数，`GD_MCP_URL` 不需要填写密钥。
-配置与错误信息不打印鉴权 URL，SDK 的 HTTP 日志会隐藏此 Key。
-超时按每个 MCP 请求计算。缓存未命中时，在同一异步任务内建立和关闭会话。
-客户端通过 Redis 共享只读工具的成功结果及完整工具列表，TTL 统一为 1 小时，
-命中不延长有效期。缓存键包含工具名和按对象键排序的参数 JSON，不使用哈希；
-不同关键词、类别、半径、页码等参数产生不同缓存键，错误结果和异常不缓存。
-默认 `REDIS_URL=redis://127.0.0.1:6379/0`，其他配置见 `.env.example`。
-`GD_MCP_CACHE_ENABLED=false`、空 `REDIS_URL` 或 TTL 为 0 可关闭缓存。
-Redis 故障或缓存格式损坏时直接查询高德；Redis 操作默认最多等待 0.5 秒。
-开发与生产使用不同 `GD_MCP_CACHE_NAMESPACE`，同一命名空间应使用相同高德服务配置。
-缓存格式调整或需要整体失效时更换命名空间版本，旧缓存按 TTL 自行过期。
-FastAPI 退出时关闭 Redis 连接池；独立 Python 调用请使用
-`async with AmapMCPClient() as client:`，或在结束时 `await client.close()`。
-本阶段只实现缓存，相同参数的并发未命中请求仍会分别查询高德。
+先在 PostgreSQL 中创建对应账号和 `travelbuddy` 数据库，再替换连接串中的账号、密码与地址；URI 密码中的特殊字符需进行 URL 编码。`LANGGRAPH_PG_DSN` 可以与业务数据库使用相同连接串，留空时使用内存检查点，后端重启后无法恢复规划状态。不使用 Redis 时，将 `REDIS_URL` 留空或设置 `GD_MCP_CACHE_ENABLED=false`。
 
-FastAPI 启动时，应用、高德与 DeepSeek 配置完整则统一执行工具发现并创建四个 Agent，
-保存在 `app.state.agents`，并注入四个专业子图，组装后缓存总图到 `app.state.trip_graph`。
-初始化不执行模型推理、地点、天气或路线查询。
-未配置必要字段，或高德发现、模型、checkpoint 初始化失败时，旅行流程保持未就绪并记录不含密钥的日志；
-这些初始化失败不阻止 API 健康检查。修正配置后重启后端，重新初始化。
+**2. 初始化密钥与数据库**
 
-在项目根目录执行：
-
-```powershell
-# List all tools, including their descriptions and JSON schemas.
-uv run python -m backend.scripts.amap_mcp list
-
-# Save the discovered tools and their full schemas for inspection.
-uv run python -m backend.scripts.amap_mcp list --output .local/amap-tools.json
-
-# Example: use this only if list returns maps_weather with a city parameter.
-uv run python -m backend.scripts.amap_mcp call maps_weather --arguments '{"city":"杭州"}'
-
-# Alternatively, read a JSON object from a UTF-8 file.
-uv run python -m backend.scripts.amap_mcp call maps_weather --arguments-file ./weather-arguments.json
-```
-
-工具名称与参数以 `list` 返回的实际 schema 为准；不写参数时发送空 JSON 对象。
-`--arguments` 与 `--arguments-file` 只能选择一个。
-命令不依赖数据库、DeepSeek 或正在运行的 FastAPI。
-结果输出保留原始 MCP 的 `content`、`structuredContent` 和 `isError`，
-工具执行失败或连接失败时返回非零退出码。已实际执行工具发现并获取 15 个工具，
-完整列表保存于本地 `.local/amap-tools.json`；该文件是发现时的快照，重新运行命令可更新。
-已通过浏览器运行真实模型和高德 MCP 旅行规划，验收范围见 [实际运行验收](deploy/ACCEPTANCE.md)。
-
-Python 调用入口为 `AmapMCPClient()` 的 `await client.list_tools()` 和
-`await client.call_tool(name, arguments)`；返回 SDK 原生类型，工具失败检查
-`result.is_error`。FastAPI 路由可通过 `get_amap_mcp_client` 依赖获取同一客户端配置；
-未配置 Key 时该依赖返回 503。Researcher 和 Context Analyst 的工具绑定工厂已实现；
-Planner 的路线工具绑定工厂也已实现。统一组装函数位于 `backend/app/agents/builder.py`；
-已由 `backend/app/lifespan.py` 在启动时调用。四个专业节点现已调用缓存 Agent，
-将结构化输出交回总图；普通流程节点和前端业务接口已接入，费用未知时保留为空并向用户说明。
-Reviewer 首版只读已有证据，不绑定外部工具。
-
-MCP 工具到 LangChain 工具的适配位于 `backend/app/integrations/mcp/adapter.py`。
-在异步函数中可以分步获取并适配：
-
-```python
-from backend.app.integrations.mcp import AmapMCPClient
-from backend.app.integrations.mcp.adapter import adapt_amap_tools
-
-client = AmapMCPClient()
-mcp_tools = await client.list_tools()
-agent_tools = adapt_amap_tools(mcp_tools, client)
-```
-
-`adapt_amap_tools` 保留高德的名称、描述和输入 JSON Schema，将调用绑定到
-`client.call_tool`。它本身不执行网络请求；`load_amap_tools(client)` 是将发现与
-适配合并的异步入口。返回的 `StructuredTool` 供后续按角色筛选后交给 `create_agent`。
-工具仅提供异步执行入口，应使用 `ainvoke` 或 Agent 的异步执行方式。
-成功调用向模型返回文本及结构化数据，完整 MCP 响应保存在 `ToolMessage.artifact`；
-连接或服务端工具执行失败转换为 `ToolException`，由 LangChain 返回工具错误。
-真实模型和高德业务工具调用已在杭州一日游场景中验证。
-
-创建多个 Agent 时统一获取并适配一次工具列表，不由每个角色单独加载。
-生命周期在配置完整时执行以下初始化，后续请求复用返回的 Agent：
-
-```python
-app.state.agents = await build_agents(app.state.amap_mcp_client)
-saver = await checkpoint_stack.enter_async_context(open_checkpointer(settings))
-app.state.trip_graph = build_trip_graph(app.state.agents, checkpointer=saver)
-```
-
-后续路由可使用 `Depends(get_agents)`，或显式调用
-`backend.app.api.dependencies.get_agents(request)` 获取缓存字典。
-字典键为 researcher、context_analyst、planner、reviewer；未初始化时依赖返回 503，
-不会重新创建 Agent。不要在每次请求中再次调用 `build_agents`。
-
-`build_agents` 内部只调用一次 `load_amap_tools(client)`，再将同一份工具列表
-传给 Researcher、Context Analyst、Planner 的构建函数。各角色 tools.py 只保留
-工具名称和同步 select 函数，从内存列表筛选，缺少必要工具时明确报错。
-Reviewer 构建时不接收外部工具。角色工厂保留结构化输出和可选 checkpointer。
-
-`build_trip_graph(agents, checkpointer=None)` 将字典中的 Agent 传给各专业子图的
-执行节点。节点把所需业务输入编码成 JSON 用户消息，异步调用 Agent，校验
-`structured_response` 并写入子图状态。总图包装节点只接收 candidates、
-travel_constraints、itinerary、review_result 和 clarification_question，
-内部模型与工具消息留在专业子图。Planner 修订时携带旧行程和审核意见。
-接口可用 `Depends(get_trip_graph)` 获取缓存总图；未就绪时返回 503。
-Save 已接入业务数据库，审核自动修订最多两轮；非流式旅行运行/恢复已通过消息 HTTP 接口接入。
-生命周期已接入 checkpoint，并在关闭时释放 saver。
-
-Understand 已实现：读取最新一条用户消息、已有 TripRequest、近期对话和审核意见，
-通过结构化模型提取本轮更新的字段，再由 Python 合并需求与检查必填项。
-未提及的字段保持原值，支持明确清除字段；新旅行从空需求开始，清理旧行程状态。
-按天调整等额外要求写入 TripRequest.additional_requirements。
-当前必填项为目的地、出行日期、1–5 天的天数、人数和交通方式；给出预算时，
-还需明确总额或人均口径。出发城市和预算可以留空。
-缺失项或模型识别的歧义生成 clarification_question，并路由到 Clarify。
-每次重新理解需求会重置审核、确认和修订状态；修改当前行程时保留旧行程供规划参考。
-模型在首次需要提取时加载；build_trip_graph 的 understand_model 参数可注入测试模型。
-
-Clarify 已实现动态暂停：`interrupt` 返回 JSON 问题，包含 `type="clarify"`、
-`question`、`missing_fields` 和 `issues`。问题优先使用已有澄清问题；没有时依据
-缺失字段、审核问题或通用提示生成。调用方通过 `result["__interrupt__"][0].value`
-展示问题，再使用相同 `thread_id` 和 `Command(resume="用户回答")` 恢复。
-回答必须是非空字符串，会去除两端空白；无效回答抛出 `pydantic.ValidationError`，
-可以用同一 thread 重试，不追加消息或进入 Understand。
-有效回答将问题和回答分别写入 AIMessage / HumanMessage，经既有边回到 Understand；
-若信息仍不完整，会再次暂停。
-
-Confirm 已实现行程展示与动态暂停。载荷包含 `type="confirm"`、`question`、
-`summary`、`trip_request`、`itinerary` 和 `candidates`；文本摘要依据实际地点名称、
-每日活动、停留及交通耗时、预计费用和备注生成，未知费用显示尚未估算。
-没有行程或行程天数列表为空时会报错，不能确认空方案。
-使用同一 `thread_id` 和 `Command(resume="确认")` 恢复后，完整匹配确认用语
-（如确认、同意、可以、好的、OK）时设置 `confirmed=True`，经现有路由进入 Save。
-其他非空文本作为修改反馈，设置 `confirmed=False` 并返回 Understand；
-例如 `Command(resume="第二天下午换成室内活动")`。
-回答包含“确认”但同时提出修改时不会按确认处理；空白或非文本回答校验失败，可重试。
-恢复后才将展示的方案和原始回答写入对话，让 Understand 理解修改针对的具体方案。
-Save 已实现：确认后检查完整需求、行程天数和地点引用，并验证会话属于当前用户，
-在数据库事务中保存需求、行程、候选地点及可选约束/审核快照。
-Planner 完成方案时生成 `save_key` 并写入 State；Confirm 暂停和 Save 重试复用该标识。
-同一会话的同一标识返回已有记录，内容不同则拒绝覆盖；新标识保存为下一个版本。
-会话行锁保护并发版本分配，提交成功后回写 `saved_itinerary_id` 和 `saved_itinerary_version`。
-保存需要已有的用户、UUID 会话，以及 `TravelBuddyContext.db` 中专供 Save、未开启事务的
-`AsyncSession`；预览和澄清阶段可以不传 db。没有数据库、未确认或数据无效时明确报错。
-完整事务、恢复和测试说明见 [DATABASE.md](docs/DATABASE.md#save-接入)。
-本次 Confirm 实现按用户要求未新增或运行测试。
-
-以下代码在异步函数中运行，`graph` 为缓存主图，`context` 为 TravelBuddyContext：
-
-```python
-from langchain_core.messages import HumanMessage
-from langgraph.types import Command
-
-config = {"configurable": {"thread_id": "trip-001"}}
-result = await graph.ainvoke(
-    {"messages": [HumanMessage(content="想去杭州")]},
-    config=config,
-    context=context,
-)
-question = result["__interrupt__"][0].value["question"]
-result = await graph.ainvoke(
-    Command(resume="2026-10-10 出发，玩两天"),
-    config=config,
-    context=context,
-)
-# 仍缺人数和交通方式时，result 中会再次出现 __interrupt__。
-```
-
-独立构建图时须传入 checkpointer；应用生命周期根据 `LANGGRAPH_PG_DSN` 使用
-PostgreSQL saver，未配置时使用内存 saver。内存只能在当前进程中恢复；
-PostgreSQL 表须先用现有初始化脚本建立。消息 HTTP 接口会自动恢复澄清/确认暂停。
-
-模型结构化输出统一从 `backend/app/schemas/structured_output.py` 导入：
-Understand 使用专用的 RequestUnderstanding；四个专业 Agent 分别使用 Candidates、
-TravelConstraints、Itinerary、ReviewResult。后四个直接导出既有业务类，同时用于
-总图 State 字段，保持同一份字段定义。各业务类的文档字符串标注了其输出角色和状态字段。
-
-| Agent | 外部工具 | 结构化输出 |
-| --- | --- | --- |
-| Researcher | maps_text_search、maps_around_search、maps_search_detail、maps_geo | Candidates |
-| Context Analyst | maps_weather | TravelConstraints |
-| Planner | maps_direction_walking、maps_direction_driving、maps_direction_bicycling、maps_direction_transit_integrated、maps_distance | Itinerary |
-| Reviewer | 无，首版只读已有证据 | ReviewResult |
-
-Researcher 提示词要求先查真实 POI 再筛选，地址解析坐标不能直接作为有 ID 的候选。
-Context Analyst 按天气工具实际返回的日期匹配旅行区间，区分实况和预报，说明未覆盖日期。
-Planner 用真实候选坐标和对应交通方式查询路线，将明确耗时换算成分钟；
-不能把直线距离当作实际路线耗时，也不能把部分交通费用当作完整旅行总费用。
-
-创建 Agent 时统一发现工具。客户端通过 Redis 缓存工具列表和只读查询结果，未命中的业务工具调用建立独立高德 MCP 会话。
-build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客户端和 session 工厂缓存，
-并释放数据库引擎。核心配置模块不再在导入时实例化 Settings，模型配置延迟到创建模型时读取。
-四个专业内部节点已使用缓存 Agent；Understand、Clarify、Confirm 和 Save 已实现。
-测试使用模拟模型验证结构化结果交接，不执行真实模型、天气或路线查询。
-
-## PostgreSQL
-
-业务数据使用 SQLAlchemy 访问，业务表变更使用 Alembic 管理；LangGraph 检查点由
-`langgraph-checkpoint-postgres` 单独管理。已定义三张业务表：
-
-- `users`：用户账号、唯一用户名、密码哈希和时间戳。
-- `conversations`：用户的聊天会话，UUID 的字符串形式作为 LangGraph `thread_id`。
-- `itineraries`：用户确认后的行程版本，保存需求、行程和地点信息的 JSONB 快照。
-
-首个迁移版本为 `118ebaead2fc`；最新版本 `c6a1e7d4b930` 为行程增加 `save_key`
-和会话内唯一约束。完整字段、约束和 Save 接入说明见
-[DATABASE.md](docs/DATABASE.md)。Save、注册登录和创建会话已实现；
-会话列表、详情、消息查看和非流式旅行运行/恢复也已实现；独立行程列表与详情 API
-以及前端“我的行程”已接入，使用说明见 [ITINERARIES.md](docs/ITINERARIES.md)。
-
-本地 `.env` 的 `DATABASE_DSN` 指向独立的 `travelbuddy` 数据库。
-连接账号可复用现有本地 PostgreSQL 账号，但不要指向其他项目的数据库。
-新环境可复制 `.env.example` 为 `.env` 后填写连接信息；不要覆盖已有 `.env`。
-`python -m backend` 已配置 Windows 下 psycopg 所需的 SelectorEventLoop。
-此配置既支持 PostgreSQL URI，也支持 psycopg 的 `host=... dbname=...` 格式。
-
-`DATABASE_DSN` 用于业务数据库；检查点独立使用可选的 `LANGGRAPH_PG_DSN`：
-
-- 未设置、留空或仅包含空白：使用内存检查点，输出警告；进程重启后状态丢失。
-- 填写 PostgreSQL 连接串：使用持久化检查点，可以与 `DATABASE_DSN` 填相同的值。
-  连接失败会报错，不会自动退回内存。
-- 每次打开内存 saver 都是新的存储；应用生命周期在当前进程内复用同一个 saver。
-
-数据库初始化（先确保目标数据库已存在）：
-
-```powershell
+```bash
+uv run python -m backend.scripts.init_auth
 uv run alembic upgrade head
-# Only needed when LANGGRAPH_PG_DSN is configured.
 uv run python -m backend.scripts.init_checkpoints
 ```
 
-检查点脚本在内存模式下会提示并跳过；PostgreSQL 模式仍由该脚本显式建表或升级表结构。
-检查点已接入应用生命周期和旅行主图。CLI 已用模拟 Agent 验证新图/saver 实例
-从真实 PostgreSQL checkpoint 恢复到确认并保存；真实模型/高德全流程和进程崩溃恢复仍待验证。
+密钥初始化脚本会生成 `AUTH_SECRET_KEY` 并写入根目录 `.env`，已有有效密钥会保留；检查点初始化脚本在内存模式下会自动跳过。
 
-修改 `.env` 后重启后端。访问 `/health/db` 会执行 `SELECT 1`：
+**3. 启动后端**
 
-- 200：`{"status":"ok","database":"postgresql"}`
-- 503：数据库未配置或连接不可用；响应不包含连接密码。
-
-`/health` 仅检查 API 进程；`/health/db` 检查数据库连通性，不检查业务表是否齐全。
-Alembic 自动生成迁移只检查已注册的业务模型，避免删除 checkpoint 表。
-新增模型后需在 `backend/app/models/__init__.py` 导入；迁移环境统一加载该包，
-生成并人工检查迁移文件后再应用；
-删除业务表需要编写显式迁移。
-
-```powershell
-uv run alembic revision --autogenerate -m "describe change"
-uv run alembic upgrade head
-uv run pytest backend/tests
+```bash
+uv run python -m backend --reload
 ```
 
-业务模型的真实 PostgreSQL 集成测试位于 `backend/tests/db/test_business_models.py`。
-设置 `TRAVELBUDDY_TEST_DATABASE_DSN` 指向已迁移的 PostgreSQL 测试库后运行；未设置则跳过。
-每个测试用外层事务回滚写入的业务记录，不调用模型、高德或 checkpoint 写入。
-Save 集成测试位于 `backend/tests/db/test_save.py`，验证真实提交、并发、幂等与失败恢复；
-它会创建临时用户和会话，并在结束时按生成的精确 ID 清理记录。两组都可用
-`uv run pytest backend/tests/db -q` 运行。图流程测试使用模拟 Agent，不调用真实模型或高德。
+后端默认运行在 `127.0.0.1:8000`，可访问 [接口文档](http://127.0.0.1:8000/docs)、[服务健康检查](http://127.0.0.1:8000/health) 和 [数据库健康检查](http://127.0.0.1:8000/health/db)。
 
-开发计划见 [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)。当前已实现主要旅行规划流程；发布前需在实际部署环境验收模型、高德地图及重启后的会话恢复。
+**4. 启动前端**
 
-## 目录规划
+打开另一个终端，运行：
 
-目录职责、当前文件映射和后续模块规划见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
+```bash
+cd frontend
+npm ci
+npm run dev
+```
 
-目录说明见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。部署文件位于 `deploy/`，服务编排入口为根目录 `compose.yaml`。
+打开 [http://127.0.0.1:3000](http://127.0.0.1:3000)。前端开发服务器默认将 `/api` 代理到 `http://127.0.0.1:8000`；需要修改后端地址时，可参考 `frontend/.env.example`，在 `frontend/.env.local` 中设置 `API_PROXY_TARGET`。
+
+### 开始第一段旅程
+
+注册并登录后，在旅行工作台填写需求，或新建旅行会话发送：
+
+> 我想在 2027 年 1 月 1 日去北京玩 3 天，1 个人，喜欢城市漫步和胡同美食，主要骑共享单车，节奏轻松一些。
+
+根据提示补充信息，等待生成方案；可以继续提出修改，或点击“确认并保存行程”。保存后，在“我的行程”查看详情，在“地图与路线”按天查询交通路线。
