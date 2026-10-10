@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, LoaderCircle, Map, MessageCircle, RefreshCw } from 'lucide-react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { ApiError } from '../../api/auth'
 import { itinerariesApi } from '../../api/itineraries'
 import type { SavedItineraryDetail } from '../../types/itinerary'
 import { useAuth } from '../auth/AuthProvider'
 import { ItineraryPreview } from '../conversations/ItineraryPreview'
+import { DeleteButton } from '../../components/common/DeleteButton'
 
 export function TripPage() {
   const { itineraryId } = useParams()
+  const navigate = useNavigate()
   const { token, expireSession } = useAuth()
   const [item, setItem] = useState<SavedItineraryDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -56,13 +58,21 @@ export function TripPage() {
             </p>
           )}
         </div>
-        <button
-          className="button button-secondary"
-          disabled={loading}
-          onClick={() => setRevision((value) => value + 1)}
-        >
-          <RefreshCw size={16} /> {error ? '重新加载' : '刷新行程'}
-        </button>
+        <div className="page-actions">
+          <button
+            className="button button-secondary"
+            disabled={loading}
+            onClick={() => setRevision((value) => value + 1)}
+          >
+            <RefreshCw size={16} /> {error ? '重新加载' : '刷新行程'}
+          </button>
+          <DeleteButton
+            kind="itinerary"
+            id={itineraryId!}
+            disabled={loading || !item}
+            onDeleted={() => navigate('/app/trips', { replace: true })}
+          />
+        </div>
       </div>
       {error && (
         <div className="conversation-error" role="alert">

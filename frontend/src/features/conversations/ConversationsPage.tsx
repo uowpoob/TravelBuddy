@@ -6,6 +6,7 @@ import { conversationsApi } from '../../api/conversations'
 import type { Conversation } from '../../types/conversation'
 import { useAuth } from '../auth/AuthProvider'
 import { useToast } from '../../components/common/ToastProvider'
+import { DeleteButton } from '../../components/common/DeleteButton'
 
 const dateFormat = new Intl.DateTimeFormat('zh-CN', {
   month: 'short',
@@ -148,20 +149,24 @@ export function ConversationsPage() {
       {items.length > 0 ? (
         <div className="conversation-grid">
           {items.map((item) => (
-            <Link
-              className="panel conversation-card"
-              key={item.id}
-              to={`/app/conversations/${item.id}`}
-            >
-              <span className="conversation-card-icon">
-                <MessageCircle size={22} />
-              </span>
-              <h2>{item.title}</h2>
-              <p>更新于 {dateFormat.format(new Date(item.updated_at))}</p>
-              <span className="text-link">
-                继续会话 <ArrowUpRight size={15} />
-              </span>
-            </Link>
+            <article className="panel conversation-card" key={item.id}>
+              <Link className="conversation-card-link" to={`/app/conversations/${item.id}`}>
+                <span className="conversation-card-icon">
+                  <MessageCircle size={22} />
+                </span>
+                <h2>{item.title}</h2>
+                <p>更新于 {dateFormat.format(new Date(item.updated_at))}</p>
+                <span className="text-link">
+                  继续会话 <ArrowUpRight size={15} />
+                </span>
+              </Link>
+              <DeleteButton
+                kind="conversation"
+                id={item.id}
+                disabled={creating || loading}
+                onDeleted={() => setRevision((value) => value + 1)}
+              />
+            </article>
           ))}
         </div>
       ) : (

@@ -22,10 +22,9 @@ class ConversationRepository:
             select(User.id).where(User.id == user_id).with_for_update()
         )
 
-    async def get_unstarted_by_user(self, user_id: int) -> Conversation | None:
-        # 首次发送前 progress 为 NULL；发送开始后独立提交 running 状态。
-        # 标题由用户自定，不能用默认标题判断是否已经聊天。
-        return await self.session.scalar(
+    async def list_unstarted_by_user(self, user_id: int) -> list[Conversation]:
+        # 这里只筛选候选；旧会话可能没有进度，服务还须检查实际聊天记录。
+        result = await self.session.scalars(
             select(Conversation)
             .where(
                 Conversation.user_id == user_id,
@@ -35,8 +34,8 @@ class ConversationRepository:
                 ),
             )
             .order_by(Conversation.updated_at.desc(), Conversation.id.desc())
-            .limit(1)
         )
+        return list(result.all())
 
     async def list_by_user(
         self, user_id: int, offset: int = 0, limit: int = 20

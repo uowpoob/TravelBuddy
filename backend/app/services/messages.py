@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from backend.app.graph.context import TravelBuddyContext
 from backend.app.repositories.conversations import ConversationRepository
+from backend.app.repositories.itineraries import ItineraryRepository
 from backend.app.schemas.conversation import (
     ChatMessageOut,
     ConversationInterruptOut,
@@ -94,6 +95,21 @@ class ConversationChatService:
         self.graph = graph
         self.session_factory = session_factory
         self.timeout = timeout
+
+    @staticmethod
+    async def clear_deleted_itinerary_reference(
+        session: AsyncSession, user_id: int, state: ConversationStateOut
+    ) -> None:
+        # 已删除的行程不能继续投影成“已保存”或提供失效链接。
+        if (
+            state.saved_itinerary_id is not None
+            and await ItineraryRepository(session).get_owned_by_id(
+                state.saved_itinerary_id, user_id
+            )
+            is None
+        ):
+            state.saved_itinerary_id = None
+            state.saved_itinerary_version = None
 
     @staticmethod
     def prepare_turn(
@@ -202,6 +218,7 @@ class ConversationChatService:
             raise
         except Exception as exc:  # noqa: BLE001 -- sanitized graph/API boundary
             raise self._execution_error(exc) from None
+        await self.clear_deleted_itinerary_reference(session, user_id, state)
         return ConversationMessagesOut(
             **state.model_dump(),
             items=messages[offset : offset + limit],
@@ -278,6 +295,7 @@ class ConversationChatService:
                 ]
             await repository.touch(conversation_id, user_id, state.title)
             await session.commit()
+            await self.clear_deleted_itinerary_reference(session, user_id, state)
             return MessageTurnOut(**state.model_dump(), items=items)
         except asyncio.CancelledError:
             if progress is not None:

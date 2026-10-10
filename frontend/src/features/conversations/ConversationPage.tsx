@@ -17,6 +17,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { ItineraryPreview } from './ItineraryPreview'
 import { PlanningProgressPanel } from '../planner/PlanningProgressPanel'
 import { usePlanningProgress } from '../planner/usePlanningProgress'
+import { DeleteButton } from '../../components/common/DeleteButton'
 
 const statusLabels = {
   completed: '准备好继续规划',
@@ -277,16 +278,24 @@ function ConversationWorkspace({ id }: { id: string }) {
                 : '读取你的旅行记录'}
           </p>
         </div>
-        <button
-          className="button button-secondary"
-          disabled={busy || loading || loadingOlder}
-          onClick={() => {
-            setRevision((value) => value + 1)
-            refreshProgress()
-          }}
-        >
-          <RefreshCw size={16} /> 刷新会话
-        </button>
+        <div className="page-actions">
+          <button
+            className="button button-secondary"
+            disabled={busy || loading || loadingOlder}
+            onClick={() => {
+              setRevision((value) => value + 1)
+              refreshProgress()
+            }}
+          >
+            <RefreshCw size={16} /> 刷新会话
+          </button>
+          <DeleteButton
+            kind="conversation"
+            id={id}
+            disabled={executing || loading || loadingOlder || !conversation}
+            onDeleted={() => navigate('/app/conversations', { replace: true })}
+          />
+        </div>
       </div>
       <Link className="text-link" to={`/app/workflow?conversation=${encodeURIComponent(id)}`}>
         查看规划节点
