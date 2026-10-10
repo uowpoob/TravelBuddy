@@ -1,6 +1,10 @@
 # TravelBuddy
 
-Python 基础项目，使用 uv 管理依赖与项目虚拟环境。
+旅行规划应用，使用 React/Vite 前端、FastAPI 后端、PostgreSQL 和高德地图，结合模型完成需求澄清、地点调研、行程规划、审核修订和确认保存。Python 依赖由 uv 管理。
+
+## Docker 本地部署与云服务器部署
+
+支持通过 Docker Compose 一起启动网页、后端、PostgreSQL 与 Redis，自动执行数据库迁移和 checkpoint 初始化。部署配置与阿里云 Ubuntu 操作步骤见 [部署说明](deploy/README.md)。本地部署者填写自己的模型与高德 Key；云端演示站使用站点所有者在服务器配置的 Key。
 
 ## 环境
 
@@ -147,7 +151,7 @@ uv run python -m backend.scripts.amap_mcp call maps_weather --arguments-file ./w
 结果输出保留原始 MCP 的 `content`、`structuredContent` 和 `isError`，
 工具执行失败或连接失败时返回非零退出码。已实际执行工具发现并获取 15 个工具，
 完整列表保存于本地 `.local/amap-tools.json`；该文件是发现时的快照，重新运行命令可更新。
-尚未运行真实模型调用或高德业务工具调用。
+已通过浏览器运行真实模型和高德 MCP 旅行规划，验收范围见 [实际运行验收](deploy/ACCEPTANCE.md)。
 
 Python 调用入口为 `AmapMCPClient()` 的 `await client.list_tools()` 和
 `await client.call_tool(name, arguments)`；返回 SDK 原生类型，工具失败检查
@@ -155,7 +159,7 @@ Python 调用入口为 `AmapMCPClient()` 的 `await client.list_tools()` 和
 未配置 Key 时该依赖返回 503。Researcher 和 Context Analyst 的工具绑定工厂已实现；
 Planner 的路线工具绑定工厂也已实现。统一组装函数位于 `backend/app/agents/builder.py`；
 已由 `backend/app/lifespan.py` 在启动时调用。四个专业节点现已调用缓存 Agent，
-将结构化输出交回总图；普通流程节点、预算估算和前端业务接口仍待后续实现。
+将结构化输出交回总图；普通流程节点和前端业务接口已接入，费用未知时保留为空并向用户说明。
 Reviewer 首版只读已有证据，不绑定外部工具。
 
 MCP 工具到 LangChain 工具的适配位于 `backend/app/integrations/mcp/adapter.py`。
@@ -176,7 +180,7 @@ agent_tools = adapt_amap_tools(mcp_tools, client)
 工具仅提供异步执行入口，应使用 `ainvoke` 或 Agent 的异步执行方式。
 成功调用向模型返回文本及结构化数据，完整 MCP 响应保存在 `ToolMessage.artifact`；
 连接或服务端工具执行失败转换为 `ToolException`，由 LangChain 返回工具错误。
-真实模型和高德业务工具调用尚未运行验证。
+真实模型和高德业务工具调用已在杭州一日游场景中验证。
 
 创建多个 Agent 时统一获取并适配一次工具列表，不由每个角色单独加载。
 生命周期在配置完整时执行以下初始化，后续请求复用返回的 Agent：
@@ -287,8 +291,7 @@ Context Analyst 按天气工具实际返回的日期匹配旅行区间，区分�
 Planner 用真实候选坐标和对应交通方式查询路线，将明确耗时换算成分钟；
 不能把直线距离当作实际路线耗时，也不能把部分交通费用当作完整旅行总费用。
 
-统一的是创建 Agent 时的工具发现流程；实际业务工具调用仍请求高德。
-当前客户端每次 call_tool 建立独立会话并读取工具元信息，尚未复用会话或缓存发现结果。
+创建 Agent 时统一发现工具。客户端通过 Redis 缓存工具列表和只读查询结果，未命中的业务工具调用建立独立高德 MCP 会话。
 build_agents 已接入 FastAPI 生命周期；关闭应用时清除 Agent、客户端和 session 工厂缓存，
 并释放数据库引擎。核心配置模块不再在导入时实例化 Settings，模型配置延迟到创建模型时读取。
 四个专业内部节点已使用缓存 Agent；Understand、Clarify、Confirm 和 Save 已实现。
@@ -358,10 +361,10 @@ Save 集成测试位于 `backend/tests/db/test_save.py`，验证真实提交、�
 它会创建临时用户和会话，并在结束时按生成的精确 ID 清理记录。两组都可用
 `uv run pytest backend/tests/db -q` 运行。图流程测试使用模拟 Agent，不调用真实模型或高德。
 
-开发计划见 [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)。当前已搭建最小后端与健康检查，尚未实现业务功能。
+开发计划见 [docs/PROJECT_PLAN.md](docs/PROJECT_PLAN.md)。当前已实现主要旅行规划流程；发布前需在实际部署环境验收模型、高德地图及重启后的会话恢复。
 
 ## 目录规划
 
 目录职责、当前文件映射和后续模块规划见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
-当前已建立完整模块目录骨架。新增 Python 包只含 `__init__.py`，前端、部署、评估和提示词目录用 `.gitkeep` 占位，业务实现待后续逐步补充。已有健康检查与 PostgreSQL 基础设施代码保留。
+目录说明见 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。部署文件位于 `deploy/`，服务编排入口为根目录 `compose.yaml`。
