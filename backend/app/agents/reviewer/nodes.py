@@ -24,10 +24,24 @@ class ReviewNode:
     ) -> dict[str, object]:
         payload = {
             "trip_request": state["trip_request"].model_dump(mode="json"),
-            "candidates": state["candidates"].model_dump(mode="json"),
-            "travel_constraints": state["travel_constraints"].model_dump(mode="json"),
-            "itinerary": state["itinerary"].model_dump(mode="json"),
+            "days": [
+                day.model_dump(mode="json")
+                for day in state["itinerary"].days
+            ],
+            "places": {
+                place.id: place.name
+                for place in state["candidates"].attractions
+                + state["candidates"].restaurants
+                + state["candidates"].hotels
+            },
             "rule_issues": state.get("rule_issues", []),
+            "revision_request": state.get("revision_request"),
+            "revision_count": state.get("revision_count", 0),
+            "previous_review": (
+                state["previous_review"].model_dump(mode="json")
+                if state.get("previous_review") is not None
+                else None
+            ),
         }
         message = HumanMessage(content=json.dumps(payload, ensure_ascii=False))
         result = await self.agent.ainvoke(

@@ -5,10 +5,15 @@ from langgraph.runtime import Runtime
 from backend.app.agents.reviewer.state import ReviewerState
 from backend.app.graph.context import TravelBuddyContext
 from backend.app.graph.state import TripState
+from backend.app.schemas.review import ReviewResult
+from backend.app.services.itinerary_rules import (
+    check_itinerary_rules,
+    enforce_rule_review,
+)
 
 
 class ReviewerNode:
-    """调用审核子图，只将审核结论与澄清问题交回主图。"""
+    """基础规则供审核参考；保留通过、修订和用户取舍三种实际结论。"""
 
     def __init__(self, graph: CompiledStateGraph):
         self.graph = graph
@@ -19,20 +24,33 @@ class ReviewerNode:
         runtime: Runtime[TravelBuddyContext],
         config: RunnableConfig,
     ) -> dict[str, object]:
+        checks = check_itinerary_rules(
+            state["trip_request"], state.get("itinerary"), state["candidates"]
+        )
+        if state.get("itinerary") is None:
+            review = ReviewResult(
+                decision="revise",
+                issues=checks.issues,
+            )
+            return {"review_result": review, "clarification_question": None}
         graph_input: ReviewerState = {
             "messages": [],
             "trip_request": state["trip_request"],
             "candidates": state["candidates"],
-            "travel_constraints": state["travel_constraints"],
             "itinerary": state["itinerary"],
-            # 确定性的业务规则检查尚未实现。
-            "rule_issues": [],
+            "rule_issues": checks.issues,
+            "revision_request": state.get("revision_request"),
+            "revision_count": state.get("revision_count", 0),
+            "previous_review": state.get("review_result"),
         }
         result = await self.graph.ainvoke(
             graph_input, config=config, context=runtime.context
         )
-        # 内部消息留在子图，主图仅接收业务结果。
+        # 只阻止基础错误被放行，不覆盖模型的 revise / needs_user，也不按次数强制 pass。
+        review = enforce_rule_review(
+            ReviewResult.model_validate(result["review_result"]), checks
+        )
         return {
-            "review_result": result["review_result"],
-            "clarification_question": result["clarification_question"],
+            "review_result": review,
+            "clarification_question": review.clarification_question,
         }

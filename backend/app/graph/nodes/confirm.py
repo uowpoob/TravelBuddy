@@ -116,6 +116,12 @@ class ConfirmNode:
             raise ValueError("没有可确认的行程，不能进入 Confirm。")
         request = state.get("trip_request")
         candidates = state.get("candidates", Candidates())
+        review = state.get("review_result")
+        if request is None or review is None or review.decision != "pass":
+            raise ValueError("行程尚未通过方案审核，不能进入 Confirm。")
+        # 非阻断提醒放进同一份确认方案，供前端卡片及最终快照展示。
+        notes = list(dict.fromkeys(itinerary.notes + review.issues))
+        itinerary = itinerary.model_copy(update={"notes": notes})
         summary = format_itinerary(itinerary, candidates, request)
         payload = {
             "type": "confirm",
@@ -140,4 +146,5 @@ class ConfirmNode:
                 HumanMessage(content=answer.root),
             ],
             "confirmed": confirmed,
+            "itinerary": itinerary,
         }

@@ -15,6 +15,7 @@ from backend.app.schemas.trip import (
     TripRequest,
     missing_request_fields,
 )
+from backend.app.services.itinerary_rules import check_itinerary_rules
 
 
 class ItinerarySaveError(ValueError):
@@ -77,23 +78,10 @@ def build_snapshot(
     )
     if missing_request_fields(request):
         raise ItinerarySaveError("旅行需求不完整，不能保存行程。")
-    if [day.day for day in plan.days] != list(range(1, request.days + 1)):
-        raise ItinerarySaveError("行程天数或每日编号与旅行需求不一致。")
-    visits = [visit for day in plan.days for visit in day.visits]
-    if not visits:
-        raise ItinerarySaveError("不能保存没有任何活动的行程。")
-    known_places = {
-        place.id: place
-        for place in places.attractions + places.restaurants + places.hotels
-    }
-    if any(
-        visit.place_id not in known_places
-        or not visit.place_id.strip()
-        or not known_places[visit.place_id].name.strip()
-        for visit in visits
-    ):
-        raise ItinerarySaveError("行程引用的地点信息缺失，不能保存。")
-    if review is not None and review.decision != "pass":
+    checks = check_itinerary_rules(request, plan, places)
+    if checks.issues:
+        raise ItinerarySaveError("行程未通过规则检查：" + "；".join(checks.issues))
+    if review is None or review.decision != "pass":
         raise ItinerarySaveError("当前行程尚未通过审核，不能保存。")
     return {
         "title": f"{request.destination_city}{request.days}日游",
