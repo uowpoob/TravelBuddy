@@ -11,7 +11,7 @@ import jwt
 
 from backend.app.core.config import AuthSettings
 
-PASSWORD_ITERATIONS = 10
+PASSWORD_ITERATIONS = 600000
 TOKEN_ALGORITHM = "HS256"
 TOKEN_ISSUER = "travelbuddy"
 TOKEN_AUDIENCE = "travelbuddy-api"
