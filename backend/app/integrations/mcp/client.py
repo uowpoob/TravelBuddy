@@ -4,15 +4,20 @@ import logging
 import traceback
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any
+from copy import deepcopy
+from typing import Any, Self
 from urllib.parse import parse_qsl, quote_plus, urlencode, urlsplit, urlunsplit
 
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.types import CallToolResult, PaginatedRequestParams, Tool
-from pydantic import SecretStr
+from pydantic import SecretStr, TypeAdapter, ValidationError
 
+from backend.app.integrations.mcp.cache import RedisMCPCache
 from backend.app.integrations.mcp.config import AmapMCPSettings
+
+logger = logging.getLogger(__name__)
+_TOOL_LIST_ADAPTER = TypeAdapter(list[Tool])
 
 
 class AmapMCPError(RuntimeError):
@@ -49,7 +54,7 @@ class _RedactAPIKey(logging.Filter):
 
 
 class AmapMCPClient:
-    """可复用的客户端配置；每次操作创建并关闭独立会话。
+    """复用 Redis 缓存；未命中时创建并关闭独立 MCP 会话。
 
     构造时不访问网络。会话在调用它的同一个任务内打开和关闭，
     避免 FastAPI 请求之间跨任务退出 SDK 的异步上下文。
@@ -70,10 +75,21 @@ class AmapMCPClient:
             urlunsplit(parts._replace(query=urlencode(query), fragment=""))
         )
         self._timeout_seconds = settings.timeout_seconds
+        self._cache = RedisMCPCache(settings)
 
         redactor = _RedactAPIKey(api_key)
         for name in ("mcp.client.streamable_http", "client", "httpx", "httpx2"):
             logging.getLogger(name).addFilter(redactor)
+
+    async def close(self) -> None:
+        """关闭本客户端持有的 Redis 连接池。"""
+        await self._cache.close()
+
+    async def __aenter__(self) -> Self:
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        await self.close()
 
     @asynccontextmanager
     async def _session(self) -> AsyncIterator[ClientSession]:
@@ -118,8 +134,19 @@ class AmapMCPClient:
 
     async def list_tools(self) -> list[Tool]:
         """发现所有工具，保留名称、描述及原始输入输出 schema。"""
+        key = self._cache.tools_key
+        cached = await self._cache.get(key)
+        if cached is not None:
+            try:
+                return _TOOL_LIST_ADAPTER.validate_json(cached)
+            except ValidationError:
+                logger.warning("Redis MCP 工具列表缓存无效，重新发现工具。")
         async with self._session() as session:
-            return await self._list_tools(session)
+            tools = await self._list_tools(session)
+        await self._cache.set(
+            key, _TOOL_LIST_ADAPTER.dump_json(tools, by_alias=True).decode("utf-8")
+        )
+        return tools
 
     async def call_tool(
         self, name: str, arguments: dict[str, Any] | None = None
@@ -128,11 +155,24 @@ class AmapMCPClient:
 
         is_error=True 是服务端返回的工具执行失败，调用方应显式处理。
         连接、协议或未知工具错误则抛出 AmapMCPError。
+        查询工具的成功结果缓存一小时；参数不同的查询使用不同缓存键。
         """
         if not name.strip():
             raise ValueError("工具名称不能为空。")
+        # 在第一次异步等待前固定参数，保证缓存键与实际请求一致。
+        params = deepcopy(arguments or {})
+        key = self._cache.tool_key(name, params)
+        if key is not None:
+            cached = await self._cache.get(key)
+            if cached is not None:
+                try:
+                    result = CallToolResult.model_validate_json(cached)
+                    if not result.is_error:
+                        return result
+                except ValidationError:
+                    logger.warning("Redis MCP 查询缓存无效，重新查询高德。")
         async with self._session() as session:
-        #     tools = await self._list_tools(session)
-        #     if not any(tool.name == name for tool in tools):
-        #         raise AmapMCPError(f"高德 MCP 未提供工具：{name}")
-            return await session.call_tool(name, arguments=arguments or {})
+            result = await session.call_tool(name, arguments=params)
+        if key is not None and not result.is_error:
+            await self._cache.set(key, result.model_dump_json(by_alias=True))
+        return result
