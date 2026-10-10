@@ -77,6 +77,60 @@
 .conversation-card .text-link {
   margin-top: auto;
 }
+.conversation-card-link {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  align-items: flex-start;
+}
+.conversation-card .delete-button {
+  margin-top: 16px;
+}
+.page-actions,
+.delete-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.delete-button {
+  color: #a54132;
+}
+.button-danger {
+  background: #a54132;
+  border: 1px solid #a54132;
+  color: white;
+}
+.button-danger:hover {
+  background: #843426;
+}
+.delete-dialog {
+  width: min(520px, calc(100% - 32px));
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  color: var(--text);
+  box-shadow: 0 20px 80px #182c3440;
+}
+.delete-dialog::backdrop {
+  background: #182c3466;
+}
+.delete-dialog h2 {
+  font-size: 20px;
+  margin-bottom: 18px;
+}
+.delete-dialog strong,
+.delete-dialog p {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-bottom: 18px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.delete-dialog-actions {
+  justify-content: flex-end;
+  margin-top: 24px;
+}
 .conversation-error {
   background: #fff3ec;
   border: 1px solid #efdbcd;

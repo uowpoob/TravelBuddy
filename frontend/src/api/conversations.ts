@@ -1,4 +1,5 @@
 import { ApiError } from './auth'
+import type { DeletionImpact } from '../types/deletion'
 import type {
   Conversation,
   ConversationCreated,
@@ -46,6 +47,14 @@ async function request<T>(token: string, path: string, options: RequestInit = {}
 }
 
 export const conversationsApi = {
+  deletionImpact: (token: string, id: string) =>
+    request<DeletionImpact>(token, `/${encodeURIComponent(id)}/deletion-impact`),
+  remove: (token: string, id: string, itineraryCount: number) =>
+    request<void>(
+      token,
+      `/${encodeURIComponent(id)}?confirmed=true&delete_itineraries=${itineraryCount > 0}&expected_itinerary_count=${itineraryCount}`,
+      { method: 'DELETE' },
+    ),
   progress: (token: string, id: string, signal?: AbortSignal) =>
     request<PlanningProgress>(token, `/${encodeURIComponent(id)}/progress`, { signal }),
   create: (token: string, title = '新旅行') =>

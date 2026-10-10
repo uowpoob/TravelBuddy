@@ -5,6 +5,7 @@ import { ApiError } from '../../api/auth'
 import { itinerariesApi } from '../../api/itineraries'
 import type { SavedItinerary } from '../../types/itinerary'
 import { useAuth } from '../auth/AuthProvider'
+import { DeleteButton } from '../../components/common/DeleteButton'
 
 export function TripsPage() {
   const { token, expireSession } = useAuth()
@@ -75,24 +76,35 @@ export function TripsPage() {
       {items.length > 0 && (
         <div className="conversation-grid">
           {items.map((item) => (
-            <Link className="panel conversation-card" key={item.id} to={`/app/trips/${item.id}`}>
-              <span className="conversation-card-icon">
-                <CalendarDays size={22} />
-              </span>
-              <span className="badge badge-green">第 {item.version} 版</span>
-              <h2>{item.title}</h2>
-              <div className="itinerary-meta">
-                <span>
-                  <MapPin size={14} /> {item.destination_city}
+            <article className="panel conversation-card" key={item.id}>
+              <Link className="conversation-card-link" to={`/app/trips/${item.id}`}>
+                <span className="conversation-card-icon">
+                  <CalendarDays size={22} />
                 </span>
-                <span>
-                  {item.start_date} 出发 · {item.days} 天
+                <span className="badge badge-green">第 {item.version} 版</span>
+                <h2>{item.title}</h2>
+                <div className="itinerary-meta">
+                  <span>
+                    <MapPin size={14} /> {item.destination_city}
+                  </span>
+                  <span>
+                    {item.start_date} 出发 · {item.days} 天
+                  </span>
+                </div>
+                <span className="text-link">
+                  查看行程 <ArrowUpRight size={15} />
                 </span>
-              </div>
-              <span className="text-link">
-                查看行程 <ArrowUpRight size={15} />
-              </span>
-            </Link>
+              </Link>
+              <DeleteButton
+                kind="itinerary"
+                id={String(item.id)}
+                disabled={loading}
+                onDeleted={() => {
+                  setOffset(0)
+                  setRevision((value) => value + 1)
+                }}
+              />
+            </article>
           ))}
         </div>
       )}

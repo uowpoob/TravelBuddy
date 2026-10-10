@@ -2,7 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.api.dependencies import get_current_user, get_session
@@ -15,15 +15,72 @@ from backend.app.schemas.conversation import (
     MessageCreate,
     MessageTurnOut,
 )
+from backend.app.schemas.deletion import DeletionImpact
 from backend.app.schemas.planning import PlanningProgressOut
 from backend.app.services.conversations import (
     create_conversation,
     get_user_conversation,
     list_user_conversations,
 )
+from backend.app.services.deletions import (
+    conversation_deletion_impact,
+    delete_conversation,
+)
 from backend.app.services.messages import ConversationChatService, ConversationError
 
 router = APIRouter(prefix="/api/v1/conversations", tags=["conversations"])
+
+
+@router.get("/{conversation_id}/deletion-impact", response_model=DeletionImpact)
+async def deletion_impact(
+    conversation_id: UUID,
+    user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> DeletionImpact:
+    try:
+        return await conversation_deletion_impact(
+            session, user.id, str(conversation_id)
+        )
+    except ConversationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="数据库暂时不可用，请稍后重试。"
+        ) from None
+
+
+@router.delete("/{conversation_id}", status_code=204)
+async def remove_conversation(
+    conversation_id: UUID,
+    request: Request,
+    user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    expected_itinerary_count: Annotated[int, Query(ge=0)],
+    confirmed: bool = False,
+    delete_itineraries: bool = False,
+) -> Response:
+    try:
+        await delete_conversation(
+            session,
+            user.id,
+            str(conversation_id),
+            getattr(request.app.state, "trip_graph", None),
+            confirmed=confirmed,
+            delete_itineraries=delete_itineraries,
+            expected_itinerary_count=expected_itinerary_count,
+        )
+    except ConversationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    except IntegrityError:
+        raise HTTPException(
+            status_code=409,
+            detail="存在其他关联数据，未执行删除。请重新查看删除影响后再确认。",
+        ) from None
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="数据库暂时不可用，请稍后重试。"
+        ) from None
+    return Response(status_code=204)
 
 
 def get_chat_service(request: Request) -> ConversationChatService:
@@ -59,11 +116,14 @@ async def create(
     response: Response,
     user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
+    chat: Annotated[ConversationChatService, Depends(get_chat_service)],
 ) -> ConversationCreated:
     try:
         conversation, reused = await create_conversation(
-            session, user.id, payload.title
+            session, user.id, payload.title, chat
         )
+    except ConversationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
     except SQLAlchemyError:
         raise HTTPException(
             status_code=503, detail="数据库暂时不可用，请稍后重试。"
