@@ -1,0 +1,49 @@
+{
+  "source": "resume-20261011T021451.json",
+  "checks": [
+    {
+      "name": "fresh_process_checkpoint_read",
+      "pass": true,
+      "conversation_id": "bbe1ba45-1ba7-483b-b96e-52233070e56b"
+    },
+    {
+      "name": "fresh_process_checkpoint_read",
+      "pass": true,
+      "conversation_id": "102570de-eef1-4a26-818d-89c3b38c7a2e"
+    },
+    {
+      "name": "fresh_process_checkpoint_read",
+      "pass": true,
+      "conversation_id": "4366f4fe-b275-4fae-bc26-ea41ef2cecf5"
+    },
+    {
+      "name": "10_concurrent_idempotent_saves",
+      "pass": true,
+      "requests": 10,
+      "before_rows": 1,
+      "after_rows": 1,
+      "seconds": 0.144
+    },
+    {
+      "name": "competing_message_lock_and_release",
+      "pass": true
+    },
+    {
+      "name": "10_concurrent_routes_one_http_request",
+      "pass": true,
+      "consumers": 10,
+      "upstream_http_requests": 1,
+      "seconds": 0.273
+    },
+    {
+      "name": "route_memory_cache",
+      "pass": true,
+      "warm_ms": 0.336
+    },
+    {
+      "name": "redis_connection_refused_mcp_fallback",
+      "pass": true,
+      "seconds": 2.051
+    }
+  ]
+}
