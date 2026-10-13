@@ -26,6 +26,7 @@ class TripState(MessagesState, total=False):
     changed_fields: list[str]
     revision_request: str | None
     research_required: bool
+    research_cache_bypass: bool
     context_required: bool
     itinerary_request: TripRequest | None
 

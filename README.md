@@ -102,11 +102,12 @@ TravelBuddy/
 | 地图服务 | 高德 MCP、Web 服务 API、JS API 2.0 | 地点搜索、天气分析、交通路线查询与地图展示。 |
 | 数据存储 | PostgreSQL、SQLAlchemy、Alembic | 保存账号、会话、行程版本并管理数据库迁移。 |
 | 状态持久化 | LangGraph Checkpoint PostgreSQL | 保存规划状态，支持跨请求与重启后的会话恢复。 |
-| 缓存 | Redis | 缓存高德 MCP 工具列表与只读查询结果。 |
+| 缓存 | Redis | 缓存高德 MCP 工具列表、只读查询结果及相同需求的 Researcher 候选地点。 |
 | 身份认证 | JWT、密码加盐哈希 | 用户登录认证与接口访问控制。 |
 | 工程与部署 | uv、pytest、Ruff、Vitest、Docker Compose、Nginx | 依赖管理、测试检查、容器部署与反向代理。 |
 
 ### 🤝 Agent 分工
+
 
 规划流程由 LangGraph 编排，四个专业 Agent 各自负责一个环节：
 

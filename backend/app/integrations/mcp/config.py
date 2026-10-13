@@ -28,6 +28,9 @@ class AmapMCPSettings(BaseSettings):
         default=SecretStr("redis://127.0.0.1:6379/0"), validation_alias="REDIS_URL"
     )
     cache_enabled: bool = Field(default=True, validation_alias="GD_MCP_CACHE_ENABLED")
+    research_cache_enabled: bool = Field(
+        default=True, validation_alias="GD_RESEARCH_CACHE_ENABLED"
+    )
     cache_namespace: str = Field(
         default="travelbuddy:dev:mcp:v1",
         min_length=1,

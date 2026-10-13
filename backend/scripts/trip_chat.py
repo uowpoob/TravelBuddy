@@ -34,6 +34,7 @@ from backend.app.graph.checkpoints import open_checkpointer
 from backend.app.graph.context import TravelBuddyContext
 from backend.app.graph.nodes.confirm import format_itinerary
 from backend.app.integrations.mcp import AmapMCPClient, AmapMCPSettings
+from backend.app.integrations.research_cache import ResearchCandidatesCache
 from backend.app.models import Conversation, User
 from backend.app.schemas.itinerary import Itinerary
 from backend.app.schemas.place import Candidates
@@ -389,6 +390,7 @@ async def main(args) -> int:
     ):
         raise ChatSetupError("跨进程恢复已有会话需要配置 LANGGRAPH_PG_DSN。")
     client = AmapMCPClient(amap_settings)
+    research_cache = ResearchCandidatesCache(amap_settings)
     engine = create_engine(settings)
     try:
         factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -396,12 +398,17 @@ async def main(args) -> int:
             print(f"Checkpoint：{type(saver).__name__}", flush=True)
             print("正在发现高德工具并初始化 Agent…", flush=True)
             agents = await build_agents(client)
-            graph = build_trip_graph(agents, checkpointer=saver)
+            graph = build_trip_graph(
+                agents, checkpointer=saver, research_cache=research_cache
+            )
             identity = await prepare_conversation(factory, args)
             return await chat_loop(graph, factory, identity, args)
     finally:
         try:
-            await client.close()
+            try:
+                await research_cache.close()
+            finally:
+                await client.close()
         finally:
             await engine.dispose()
 
