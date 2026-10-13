@@ -13,6 +13,7 @@ from backend.app.graph.builder import build_trip_graph
 from backend.app.graph.checkpoints import open_checkpointer
 from backend.app.integrations.amap_routes import AmapRouteClient
 from backend.app.integrations.mcp import AmapMCPClient, AmapMCPError, AmapMCPSettings
+from backend.app.integrations.research_cache import ResearchCandidatesCache
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI):
     app.state.db_engine = None
     app.state.session_factory = None
     app.state.amap_mcp_client = None
+    app.state.research_cache = None
     app.state.agents = None
     app.state.trip_graph = None
     app.state.amap_route_client = None
@@ -40,6 +42,8 @@ async def lifespan(app: FastAPI):
             if mcp_settings.api_key.get_secret_value().strip():
                 app.state.amap_mcp_client = AmapMCPClient(mcp_settings)
                 checkpoint_stack.push_async_callback(app.state.amap_mcp_client.close)
+                app.state.research_cache = ResearchCandidatesCache(mcp_settings)
+                checkpoint_stack.push_async_callback(app.state.research_cache.close)
 
         try:
             settings = Settings()
@@ -69,7 +73,9 @@ async def lifespan(app: FastAPI):
                 saver = await checkpoint_stack.enter_async_context(
                     open_checkpointer(settings)
                 )
-                trip_graph = build_trip_graph(agents, checkpointer=saver)
+                trip_graph = build_trip_graph(
+                    agents, checkpointer=saver, research_cache=app.state.research_cache
+                )
             except (AmapMCPError, ValueError, PsycopgError) as exc:
                 # 配置异常可能包含密钥，只记录错误类型，不输出原始异常。
                 logger.error(
@@ -86,6 +92,7 @@ async def lifespan(app: FastAPI):
         app.state.trip_graph = None
         app.state.agents = None
         app.state.amap_mcp_client = None
+        app.state.research_cache = None
         app.state.session_factory = None
         try:
             await checkpoint_stack.aclose()

@@ -24,6 +24,7 @@ from backend.app.graph.routes import (
     route_after_understand,
 )
 from backend.app.graph.state import TripState
+from backend.app.integrations.research_cache import ResearchCandidatesCache
 
 
 def build_trip_graph(
@@ -31,6 +32,7 @@ def build_trip_graph(
     checkpointer: BaseCheckpointSaver | None = None,
     *,
     understand_model: BaseChatModel | None = None,
+    research_cache: ResearchCandidatesCache | None = None,
 ) -> CompiledStateGraph:
     """复用已构建的四个 Agent，组装专业子图和总图。
 
@@ -52,7 +54,10 @@ def build_trip_graph(
     builder.add_node("understand", UnderstandNode(understand_model))
     builder.add_node("clarify", ClarifyNode())
     builder.add_node(
-        "researcher", ResearcherNode(graph=build_researcher_graph(agents["researcher"]))
+        "researcher",
+        ResearcherNode(
+            graph=build_researcher_graph(agents["researcher"]), cache=research_cache
+        ),
     )
     builder.add_node(
         "context_analyst",

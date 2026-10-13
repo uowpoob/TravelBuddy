@@ -179,6 +179,15 @@ class UnderstandNode:
             "changed_fields": changed_fields,
             "revision_request": str(latest.content) if latest is not None else None,
             "research_required": research_required,
+            "research_cache_bypass": bool(
+                refresh_candidates
+                and not reset
+                and (
+                    candidates.attractions
+                    or candidates.restaurants
+                    or candidates.hotels
+                )
+            ),
             "context_required": context_required,
             "candidates": candidates,
             "travel_constraints": constraints,
