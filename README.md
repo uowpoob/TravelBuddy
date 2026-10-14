@@ -367,3 +367,34 @@ npm run dev
 > 我想在 2027 年 1 月 1 日去北京玩 3 天，1 个人，喜欢城市漫步和胡同美食，主要骑共享单车，节奏轻松一些。
 
 根据提示补充信息，等待生成方案；可以继续提出修改，或点击“确认并保存行程”。保存后，在“我的行程”查看详情，在“地图与路线”按天查询交通路线。
+
+## 🧪 持续集成（CI）
+
+[CI 工作流](.github/workflows/ci.yml) 在代码推送、PR 创建或更新时自动运行，也可以在 GitHub 的 **Actions → CI → Run workflow** 中手动触发。前后端分别运行，检查失败时可以打开对应任务查看日志。
+
+| 任务 | 检查内容 |
+| --- | --- |
+| `Backend checks` | 使用 Python 3.13 和 uv 锁文件安装依赖，执行 Ruff、数据库迁移、检查点初始化及全部 pytest 测试。 |
+| `Frontend checks` | 使用 Node.js 24 和 npm 锁文件安装依赖，执行 Vitest、TypeScript 检查和 Vite 生产构建。 |
+
+后端任务会启动临时 PostgreSQL 17 和 Redis 7，并设置 `TRAVELBUDDY_TEST_DATABASE_DSN`、`TRAVELBUDDY_TEST_REDIS_URL`，让真实数据库和缓存测试参与检查。模型及高德响应由测试模拟，普通 CI 无需配置真实 API 密钥；任务结束后临时服务由 GitHub 清理。
+
+提交前可以在项目根目录运行：
+
+```bash
+uv sync --locked --dev
+uv run --locked ruff check backend
+uv run --locked pytest -ra
+```
+
+在 `frontend` 目录运行：
+
+```bash
+npm ci
+npm test
+npm run build
+```
+
+本地未设置测试连接地址时，PostgreSQL 和 Redis 集成测试会跳过；如需运行，使用独立测试数据库，先配置 `DATABASE_DSN` 并执行 `uv run --locked alembic upgrade head`，再把同一地址设为 `TRAVELBUDDY_TEST_DATABASE_DSN`。设置 `TRAVELBUDDY_TEST_REDIS_URL` 可启用真实 Redis 测试。
+
+若要要求 PR 检查通过后才能合并，在 GitHub 中为主分支 `master` 配置分支保护或 ruleset，将 `Backend checks` 和 `Frontend checks` 设为必需状态检查。当前工作流负责验证代码，不包含服务器部署。

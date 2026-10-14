@@ -1,0 +1,1878 @@
+{
+  "run": "research-cache-smoke-20261013T092349",
+  "started_at": "2026-10-13T09:23:49.950486+08:00",
+  "transport": "FastAPI HTTPX ASGI; real model, Amap MCP, Redis, PostgreSQL/checkpoints",
+  "method": "Identical prompts in fresh cold/warm conversations and isolated Redis namespaces; --smoke runs one Hangzhou pair",
+  "pairs": [
+    {
+      "index": 1,
+      "case": "杭州西湖1日",
+      "prompt": "2026年10月14日起去杭州玩1天，2位成年人，步行，喜欢西湖景观和本地美食，每天2到3个游览地点，节奏轻松。杭州当地出发，无必须去的地点，不设预算，不需要安排酒店，不需要城际交通。请直接生成完整行程，其他细节由你合理安排。",
+      "namespace": "travelbuddy:eval:research-cache-smoke-20261013T092349:case01",
+      "turns": {
+        "cold": {
+          "conversation_id": "bf7f8619-fec5-4401-ae7c-92b473faa5b2",
+          "mcp_calls": [
+            {
+              "tool": "maps_weather",
+              "arguments": {
+                "city": "杭州"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 0.4132000030949712,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "bea3a1d60985962df9970bab6452c37847f083d073557bc83935aae2915906f4",
+              "response_bytes": 1312,
+              "ms": 1178.1464000232518
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "keywords": "西湖 观景 公园",
+                "city": "杭州",
+                "citylimit": true
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 63.10449994634837,
+              "redis_value_present": false,
+              "is_error": true,
+              "business_errors": [
+                "CUQPS_HAS_EXCEEDED_THE_LIMIT"
+              ],
+              "result_sha256": "fb1f063e878f5c96da3bc35c2b47aea6289695eb94d42fbd175bfa7715e0a4a8",
+              "response_bytes": 195,
+              "ms": 850.1634000567719
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "keywords": "西湖 景点",
+                "city": "杭州",
+                "citylimit": true
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 8.014600025489926,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "a8d8cfa4ae609efeff64eaad7dd2b60bcfcf065a67361add4b25195c265895eb",
+              "response_bytes": 4607,
+              "ms": 1310.895700007677
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "keywords": "西湖 周边 餐厅",
+                "city": "杭州",
+                "citylimit": true
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 82.06609997432679,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "7af15031a7f25e2cdd7d885e391cb15481a9bd759def74acd2e6836cb5516581",
+              "response_bytes": 4755,
+              "ms": 1329.9468000186607
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "keywords": "杭州 本地美食 杭帮菜",
+                "city": "杭州",
+                "citylimit": true
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 34.8046999424696,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "0b76644a02701e9e4c2d4299cae274a27c0cd2726db595acd493161687e1a1d1",
+              "response_bytes": 5577,
+              "ms": 1350.6728999782354
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "city": "杭州",
+                "citylimit": true,
+                "keywords": "西湖 步行 游览 景点"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 0.3848000196740031,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "078bff4486d2abe9898105375d980cda5af4dc839e6713ed28fd8c6103ab83fe",
+              "response_bytes": 228,
+              "ms": 1063.4649000130594
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "city": "杭州",
+                "citylimit": true,
+                "keywords": "湖滨 步行街 西湖 断桥"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 26.993100065737963,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "bd95ce6447d98516e6eb4ee015dbfcd87a00bf32f523a960998070f127049138",
+              "response_bytes": 1927,
+              "ms": 1169.3291999399662
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "city": "杭州",
+                "citylimit": true,
+                "keywords": "柳浪闻莺 涌金公园"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 57.97119997441769,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "e05b4c4695e2f32f9e15937b70f39b71edf2bab5e6897eb4b9866204df49c362",
+              "response_bytes": 505,
+              "ms": 1108.2378000719473
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "city": "杭州",
+                "citylimit": true,
+                "keywords": "断桥残雪 白堤"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 30.69879999384284,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "03e0528674a405892f1158c8b280b6bb38e897213b6dc5b3a5fb77eaee704213",
+              "response_bytes": 5214,
+              "ms": 1175.5535999545828
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "city": "杭州",
+                "citylimit": true,
+                "keywords": "杭州 老字号 杭帮菜 湖滨"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 0.3831000067293644,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "ea0fdd495f5a0ae9f56409f0e54fd55149f7857f796afe208f3199f529ed6807",
+              "response_bytes": 3025,
+              "ms": 1188.9770000707358
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "city": "杭州",
+                "citylimit": true,
+                "keywords": "苏堤 花港观鱼 雷峰塔 景点"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 0.6364999571815133,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "8e4281d28671103cfd826622706ba0ae799152a826d44c2e41bd8b3136f6fade",
+              "response_bytes": 4870,
+              "ms": 1205.0189999863505
+            },
+            {
+              "tool": "maps_text_search",
+              "arguments": {
+                "city": "杭州",
+                "citylimit": true,
+                "keywords": "杭州 知味观 新白鹿 杭帮菜"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 26.8084000563249,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "d0bd870d209571f84599e170615fb02d0118d4e6bff8f2945920b0c2ee7e747c",
+              "response_bytes": 5108,
+              "ms": 1221.5911999810487
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B0247C"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 189.80079994071275,
+              "redis_value_present": false,
+              "is_error": true,
+              "business_errors": [
+                "CUQPS_HAS_EXCEEDED_THE_LIMIT"
+              ],
+              "result_sha256": "fb1f063e878f5c96da3bc35c2b47aea6289695eb94d42fbd175bfa7715e0a4a8",
+              "response_bytes": 195,
+              "ms": 948.1028000591323
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B023B2"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 141.02149999234825,
+              "redis_value_present": false,
+              "is_error": true,
+              "business_errors": [
+                "CUQPS_HAS_EXCEEDED_THE_LIMIT"
+              ],
+              "result_sha256": "fb1f063e878f5c96da3bc35c2b47aea6289695eb94d42fbd175bfa7715e0a4a8",
+              "response_bytes": 195,
+              "ms": 952.000999939628
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B01EE6"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 63.198399962857366,
+              "redis_value_present": false,
+              "is_error": true,
+              "business_errors": [
+                "CUQPS_HAS_EXCEEDED_THE_LIMIT"
+              ],
+              "result_sha256": "fb1f063e878f5c96da3bc35c2b47aea6289695eb94d42fbd175bfa7715e0a4a8",
+              "response_bytes": 195,
+              "ms": 956.9414000725374
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B01D2F"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 160.24270001798868,
+              "redis_value_present": false,
+              "is_error": true,
+              "business_errors": [
+                "CUQPS_HAS_EXCEEDED_THE_LIMIT"
+              ],
+              "result_sha256": "fb1f063e878f5c96da3bc35c2b47aea6289695eb94d42fbd175bfa7715e0a4a8",
+              "response_bytes": 195,
+              "ms": 955.9213999891654
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B0AC72"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 87.49400009401143,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "85ea5b2c21990880c0eae97731dc9cbc572bcfe7b8c8c0387f916795466e9717",
+              "response_bytes": 686,
+              "ms": 1149.1937999380752
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B13L9M"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 37.55310003180057,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "15f17bf989e98ed5a68a4ebbfaf5417e74c1d5f48c9a5eadd5e97317861c2a54",
+              "response_bytes": 670,
+              "ms": 1165.3113999636844
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B0FFL9RQ5O"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 108.4374999627471,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "aa3553730c53ad4fca78748b0b6aaa3ce484774ef0fd52379254313e4dd0174b",
+              "response_bytes": 621,
+              "ms": 1183.6832999251783
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B0FFFTYEG4"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 9.773300029337406,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "789d75ab05f9c5d81a8b5b24dc62f53e8bb6df13d877ae98ae7748646f95e559",
+              "response_bytes": 734,
+              "ms": 1191.2688999436796
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B09LKR"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 0.45249995309859514,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "274fcb1cee30bb1a594416fb1697a59987963cd82b9df517ab60a3d8facc7743",
+              "response_bytes": 870,
+              "ms": 1032.296699937433
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B0247C"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 52.96500003896654,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "539e58a04034e7f43936d5264bbeb9ed7420a0e665afa111e812f77a23cf91c9",
+              "response_bytes": 675,
+              "ms": 1071.6615000274032
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B0FFH154X7"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 26.859900099225342,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "0116c52604aa2351d3f5cae256de588ce58a4fcd7c1d062733b8f0048ab3c489",
+              "response_bytes": 684,
+              "ms": 1091.8755000457168
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B1994H"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 23.41100003104657,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "9bc70bfd7db8b2bc3ca3eca618abc2256e78263c821669e7a3a07e59ff357893",
+              "response_bytes": 728,
+              "ms": 1129.3439000146464
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B0FFI927N3"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 0.35799993202090263,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "2c4a6f99f9c46996fa33fa043ddb9ddccf7bc460e01f880eecd2abcb59e3d3f0",
+              "response_bytes": 697,
+              "ms": 1140.2200000593439
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B0KR0UN1M0"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 49.90930005442351,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "464442bfbef3bac20cee1911b630d6c0ef158cef67088747dceb4f730646aff4",
+              "response_bytes": 666,
+              "ms": 1153.7088000914082
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B01EE6"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 0.749400001950562,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "cd2cb7e5812ddaebbaec5319460432a91fed79cf0920a4e65607894cd6ad0e91",
+              "response_bytes": 711,
+              "ms": 1046.5956000844017
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B01D2F"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 30.22600000258535,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "bf04b52208fe83de9fbef0d505ca52f32899f0163d0aafe056fb546dd24d5800",
+              "response_bytes": 718,
+              "ms": 1067.1833000378683
+            },
+            {
+              "tool": "maps_search_detail",
+              "arguments": {
+                "id": "B023B023B2"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 60.68110000342131,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "5e96e758b3cbb6a8b5c7e0c9672dda76d86ca5317b15aaf36e6c72b39f9537b4",
+              "response_bytes": 676,
+              "ms": 1074.587699957192
+            },
+            {
+              "tool": "maps_direction_walking",
+              "arguments": {
+                "origin": "120.151347,30.258151",
+                "destination": "120.149189,30.255701"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 55.969799985177815,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "46b4a8a5a707eef8a35a714828e9d0d4072897557925267fe55f183466eeb2b4",
+              "response_bytes": 555,
+              "ms": 1033.9943000581115
+            },
+            {
+              "tool": "maps_direction_walking",
+              "arguments": {
+                "origin": "120.149189,30.255701",
+                "destination": "120.162923,30.254158"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 30.50950006581843,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "8682bd03934e484a29bae9dcb1e4051224f774da42102dda155879daaae640ef",
+              "response_bytes": 1611,
+              "ms": 1043.1579999858513
+            },
+            {
+              "tool": "maps_direction_walking",
+              "arguments": {
+                "origin": "120.162923,30.254158",
+                "destination": "120.163591,30.252629"
+              },
+              "cache_hit": false,
+              "cache_eligible": true,
+              "upstream_sessions": 1,
+              "redis_read_ms": 0.22490008268505335,
+              "redis_value_present": false,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "c8402e042b096f887b115fb8f7ebc9a8be2b4fc47556ab49cc210ff16f1887cf",
+              "response_bytes": 585,
+              "ms": 1062.0517999632284
+            }
+          ],
+          "model_calls": [
+            {
+              "run_id": "01a132db-e7b8-7cd0-a95a-df90a349cb90",
+              "seconds": 1.170440600020811,
+              "usage": [
+                {
+                  "input_tokens": 1962,
+                  "output_tokens": 207,
+                  "total_tokens": 2169,
+                  "input_token_details": {
+                    "cache_read": 1792
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132db-ec98-7af1-8a6b-6750aebb8294",
+              "seconds": 0.8562552999937907,
+              "usage": [
+                {
+                  "input_tokens": 1596,
+                  "output_tokens": 33,
+                  "total_tokens": 1629,
+                  "input_token_details": {
+                    "cache_read": 1408
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132db-eca7-70d1-a081-144117c0b45c",
+              "seconds": 2.614871099940501,
+              "usage": [
+                {
+                  "input_tokens": 2232,
+                  "output_tokens": 270,
+                  "total_tokens": 2502,
+                  "input_token_details": {
+                    "cache_read": 2048
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132db-f497-7fc2-af51-5bee275995ed",
+              "seconds": 2.2287668000208214,
+              "usage": [
+                {
+                  "input_tokens": 1959,
+                  "output_tokens": 339,
+                  "total_tokens": 2298,
+                  "input_token_details": {
+                    "cache_read": 1792
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132db-fc37-7711-8cfc-b0a1af2e66af",
+              "seconds": 1.0453125999774784,
+              "usage": [
+                {
+                  "input_tokens": 7413,
+                  "output_tokens": 143,
+                  "total_tokens": 7556,
+                  "input_token_details": {
+                    "cache_read": 2432
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-04ec-7c50-b829-28a84b566079",
+              "seconds": 1.3930076999822631,
+              "usage": [
+                {
+                  "input_tokens": 8187,
+                  "output_tokens": 213,
+                  "total_tokens": 8400,
+                  "input_token_details": {
+                    "cache_read": 7552
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-0f13-7741-b531-403558890a19",
+              "seconds": 1.1327594999456778,
+              "usage": [
+                {
+                  "input_tokens": 11160,
+                  "output_tokens": 152,
+                  "total_tokens": 11312,
+                  "input_token_details": {
+                    "cache_read": 8320
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-1857-7593-9c3a-02d46e4c591f",
+              "seconds": 1.5095530999824405,
+              "usage": [
+                {
+                  "input_tokens": 14548,
+                  "output_tokens": 281,
+                  "total_tokens": 14829,
+                  "input_token_details": {
+                    "cache_read": 11264
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-22fb-7680-a212-634c4c05f538",
+              "seconds": 0.7856757000554353,
+              "usage": [
+                {
+                  "input_tokens": 15618,
+                  "output_tokens": 107,
+                  "total_tokens": 15725,
+                  "input_token_details": {
+                    "cache_read": 14720
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-2a64-72c3-ab94-8fd79931078d",
+              "seconds": 0.870888999896124,
+              "usage": [
+                {
+                  "input_tokens": 16319,
+                  "output_tokens": 109,
+                  "total_tokens": 16428,
+                  "input_token_details": {
+                    "cache_read": 15616
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-325f-7d22-bc2f-b2f8391c1a78",
+              "seconds": 1.1905812000622973,
+              "usage": [
+                {
+                  "input_tokens": 17001,
+                  "output_tokens": 107,
+                  "total_tokens": 17108,
+                  "input_token_details": {
+                    "cache_read": 16384
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-3b54-7362-ae81-5321ca58fd59",
+              "seconds": 3.5630815000040457,
+              "usage": [
+                {
+                  "input_tokens": 17597,
+                  "output_tokens": 967,
+                  "total_tokens": 18564,
+                  "input_token_details": {
+                    "cache_read": 17024
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-4988-70f2-adda-2afed55410fc",
+              "seconds": 0.9963729999726638,
+              "usage": [
+                {
+                  "input_tokens": 5022,
+                  "output_tokens": 193,
+                  "total_tokens": 5215,
+                  "input_token_details": {
+                    "cache_read": 3584
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-519f-7283-a07e-c58ca1a24fce",
+              "seconds": 2.8683042000047863,
+              "usage": [
+                {
+                  "input_tokens": 5763,
+                  "output_tokens": 423,
+                  "total_tokens": 6186,
+                  "input_token_details": {
+                    "cache_read": 5120
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-5d13-7d33-a5ee-4219be0d72d5",
+              "seconds": 1.3997989000054076,
+              "usage": [
+                {
+                  "input_tokens": 1438,
+                  "output_tokens": 177,
+                  "total_tokens": 1615,
+                  "input_token_details": {
+                    "cache_read": 768
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            }
+          ],
+          "nodes": [
+            {
+              "name": "understand",
+              "seconds": 1.1883836999768391
+            },
+            {
+              "name": "context_analyst",
+              "seconds": 4.3481713000219315
+            },
+            {
+              "name": "researcher",
+              "seconds": 23.80079669994302
+            },
+            {
+              "name": "planner",
+              "seconds": 4.992984000011347
+            },
+            {
+              "name": "reviewer",
+              "seconds": 1.4522588999243453
+            }
+          ],
+          "attempts": [
+            {
+              "http": 200,
+              "seconds": 31.73937660001684,
+              "response": {
+                "conversation_id": "bf7f8619-fec5-4401-ae7c-92b473faa5b2",
+                "title": "杭州一日西湖美食慢游",
+                "status": "waiting_approval",
+                "interrupt": {
+                  "type": "confirm",
+                  "question": "是否接受当前行程？回复“确认”接受方案；如需修改，请直接说明修改要求。",
+                  "summary": "杭州行程方案\n出行人数：2 人\n交通方式：步行\n\n第 1 天（2026-10-14）\n1. 杭州西湖风景名胜区-断桥残雪（龙井路1号杭州西湖风景名胜区内(东北角)）；预计停留 40 分钟\n2. 杭州西湖风景名胜区-白堤（西湖街道龙井路1号杭州西湖风景名胜区内(东北角)）；预计停留 60 分钟；到达交通：步行，约 5 分钟\n3. 湖滨步行街（凤起路539-4号(龙翔桥地铁站C口步行120米)）；预计停留 90 分钟；到达交通：步行，约 28 分钟\n4. 知味观(湖滨总店)（仁和路83-1号(龙翔桥地铁站C口步行210米)）；预计停留 60 分钟；到达交通：步行，约 3 分钟\n\n预计费用（全体出行人员，人民币）\n总额：尚未估算\n\n行程说明\n- 全天集中在西湖东北角与湖滨一带步行，路线依次为断桥残雪—白堤—湖滨步行街—知味观（湖滨总店），景点间步行约 5、28、3 分钟，整体节奏轻松。\n- 当天多云、18~25℃，适合步行，早晚偏凉，建议带一件薄外套。\n- 每天前往第一站的交通尚未安排，补充酒店或出发位置后可完善，从住处到断桥残雪的步行时间建议出发前用导航确认。\n- 门票、餐饮等费用尚未确认，暂时无法估算这趟的总花费，也无法判断是否在预算内；西湖沿湖区域多为免费开放，知味观用餐消费可在到店前查看菜单或提前了解支付方式。\n- 两个用餐点知味观、杭州酒家相距很近，若当天想换一家可以随时调整；湖滨步行街人流较旺，节假日建议错峰用餐。\n- 行程含4个游览点（断桥残雪→白堤→湖滨步行街→知味观），略多于「每天2到3个地点」的偏好；若严格按此要求，可将断桥残雪与白堤视为同一西湖景观段的连续漫步点，或合并/删除一处。\n- 最后一站知味观为餐饮点，安排在湖滨步行街之后动线合理；如希望更贴合「本地美食」主题，也可考虑将其作为正餐节点而非游览点计数。",
+                  "missing_fields": [],
+                  "issues": [],
+                  "trip_request": {
+                    "destination_city": "杭州",
+                    "departure_city": "杭州",
+                    "days": 1,
+                    "start_date": "2026-10-14",
+                    "travelers": 2,
+                    "budget": null,
+                    "budget_scope": null,
+                    "preferences": [
+                      "西湖景观",
+                      "本地美食",
+                      "节奏轻松"
+                    ],
+                    "must_visit": [],
+                    "transport": "步行",
+                    "additional_requirements": [
+                      "每天2到3个游览地点",
+                      "不需要安排酒店",
+                      "不需要城际交通"
+                    ]
+                  },
+                  "itinerary": {
+                    "days": [
+                      {
+                        "day": 1,
+                        "visits": [
+                          {
+                            "place_id": "B023B01EE6",
+                            "stay_minutes": 40,
+                            "transport": null,
+                            "travel_minutes": null
+                          },
+                          {
+                            "place_id": "B0FFFTYEG4",
+                            "stay_minutes": 60,
+                            "transport": "步行",
+                            "travel_minutes": 5
+                          },
+                          {
+                            "place_id": "B0FFL9RQ5O",
+                            "stay_minutes": 90,
+                            "transport": "步行",
+                            "travel_minutes": 28
+                          },
+                          {
+                            "place_id": "B0FFH154X7",
+                            "stay_minutes": 60,
+                            "transport": "步行",
+                            "travel_minutes": 3
+                          }
+                        ]
+                      }
+                    ],
+                    "estimated_cost": {
+                      "total": null,
+                      "breakdown": {}
+                    },
+                    "notes": [
+                      "全天集中在西湖东北角与湖滨一带步行，路线依次为断桥残雪—白堤—湖滨步行街—知味观（湖滨总店），景点间步行约 5、28、3 分钟，整体节奏轻松。",
+                      "当天多云、18~25℃，适合步行，早晚偏凉，建议带一件薄外套。",
+                      "每天前往第一站的交通尚未安排，补充酒店或出发位置后可完善，从住处到断桥残雪的步行时间建议出发前用导航确认。",
+                      "门票、餐饮等费用尚未确认，暂时无法估算这趟的总花费，也无法判断是否在预算内；西湖沿湖区域多为免费开放，知味观用餐消费可在到店前查看菜单或提前了解支付方式。",
+                      "两个用餐点知味观、杭州酒家相距很近，若当天想换一家可以随时调整；湖滨步行街人流较旺，节假日建议错峰用餐。",
+                      "行程含4个游览点（断桥残雪→白堤→湖滨步行街→知味观），略多于「每天2到3个地点」的偏好；若严格按此要求，可将断桥残雪与白堤视为同一西湖景观段的连续漫步点，或合并/删除一处。",
+                      "最后一站知味观为餐饮点，安排在湖滨步行街之后动线合理；如希望更贴合「本地美食」主题，也可考虑将其作为正餐节点而非游览点计数。"
+                    ]
+                  },
+                  "candidates": {
+                    "attractions": [
+                      {
+                        "id": "B023B13L9M",
+                        "name": "杭州西湖风景名胜区",
+                        "location": "120.121358,30.222692",
+                        "category": "风景名胜;国家级景点",
+                        "address": "西湖街道龙井路1号",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B01EE6",
+                        "name": "杭州西湖风景名胜区-断桥残雪",
+                        "location": "120.151347,30.258151",
+                        "category": "风景名胜;国家级景点",
+                        "address": "龙井路1号杭州西湖风景名胜区内(东北角)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B0FFFTYEG4",
+                        "name": "杭州西湖风景名胜区-白堤",
+                        "location": "120.149189,30.255701",
+                        "category": "风景名胜;风景名胜",
+                        "address": "西湖街道龙井路1号杭州西湖风景名胜区内(东北角)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B0AC72",
+                        "name": "西湖风景区-苏堤",
+                        "location": "120.139291,30.240338",
+                        "category": "风景名胜;风景名胜",
+                        "address": "龙井路1号杭州西湖风景名胜区内(东侧)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B023B2",
+                        "name": "杭州西湖风景名胜区-花港观鱼",
+                        "location": "120.139095,30.230233",
+                        "category": "风景名胜;风景名胜",
+                        "address": "西湖街道西山路5-1号",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B0247C",
+                        "name": "杭州西湖风景名胜区-柳浪闻莺",
+                        "location": "120.156326,30.240389",
+                        "category": "风景名胜;风景名胜",
+                        "address": "清波街道南山路87号",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B01D2F",
+                        "name": "杭州西湖风景名胜区-涌金公园",
+                        "location": "120.160139,30.245915",
+                        "category": "风景名胜;公园广场;公园",
+                        "address": "杭州西湖风景名胜区内(东北角)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B0FFL9RQ5O",
+                        "name": "湖滨步行街",
+                        "location": "120.162923,30.254158",
+                        "category": "购物服务;特色商业街;步行街",
+                        "address": "凤起路539-4号(龙翔桥地铁站C口步行120米)",
+                        "source": "amap"
+                      }
+                    ],
+                    "restaurants": [
+                      {
+                        "id": "B0FFH154X7",
+                        "name": "知味观(湖滨总店)",
+                        "location": "120.163591,30.252629",
+                        "category": "餐饮服务;中餐厅",
+                        "address": "仁和路83-1号(龙翔桥地铁站C口步行210米)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B1994H",
+                        "name": "杭州酒家(延安路店)",
+                        "location": "120.164014,30.251744",
+                        "category": "餐饮服务;中餐厅;综合酒楼",
+                        "address": "延安路205号1-3层(龙翔桥地铁站C口步行270米)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B0FFI927N3",
+                        "name": "新白鹿(杭州湖滨in77店)",
+                        "location": "120.164784,30.250865",
+                        "category": "餐饮服务;中餐厅;浙江菜",
+                        "address": "解放路238号湖滨银泰C3区3F",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B0KR0UN1M0",
+                        "name": "赵府私厨·老杭帮菜(西湖老店)",
+                        "location": "120.161278,30.255553",
+                        "category": "餐饮服务;中餐厅;浙江菜",
+                        "address": "学士路92号(星远里二弄西门旁)",
+                        "source": "amap"
+                      }
+                    ],
+                    "hotels": []
+                  }
+                },
+                "saved_itinerary_id": null,
+                "saved_itinerary_version": null,
+                "items": [
+                  {
+                    "id": "dbaa98b2-d4e6-4e84-ab23-2db5174162f2",
+                    "role": "user",
+                    "content": "2026年10月14日起去杭州玩1天，2位成年人，步行，喜欢西湖景观和本地美食，每天2到3个游览地点，节奏轻松。杭州当地出发，无必须去的地点，不设预算，不需要安排酒店，不需要城际交通。请直接生成完整行程，其他细节由你合理安排。"
+                  }
+                ]
+              }
+            }
+          ],
+          "research_cache_lookups": [
+            {
+              "hit": false,
+              "ms": 4.254000028595328,
+              "key": "travelbuddy:eval:research-cache-smoke-20261013T092349:case01:research:candidates:v1:1a446ba1c17471bfbdbb179de0c598c0064c8e241d8860c666a42117aba54fc7"
+            }
+          ],
+          "seconds": 31.739380300045013,
+          "http": 200,
+          "status": "waiting_approval",
+          "trip_request": {
+            "destination_city": "杭州",
+            "departure_city": "杭州",
+            "days": 1,
+            "start_date": "2026-10-14",
+            "travelers": 2,
+            "budget": null,
+            "budget_scope": null,
+            "preferences": [
+              "西湖景观",
+              "本地美食",
+              "节奏轻松"
+            ],
+            "must_visit": [],
+            "transport": "步行",
+            "additional_requirements": [
+              "每天2到3个游览地点",
+              "不需要安排酒店",
+              "不需要城际交通"
+            ]
+          },
+          "itinerary_days": 1,
+          "complete_plan": true,
+          "metrics": {
+            "model_calls": 15,
+            "mcp_calls": 32,
+            "eligible_calls": 32,
+            "cache_hits": 0,
+            "hit_rate_pct": 0.0,
+            "upstream_tool_calls": 32,
+            "tool_seconds_sum": 35.60109900019597,
+            "business_or_tool_errors": 5,
+            "cached_error_hits": 0
+          }
+        },
+        "warm": {
+          "conversation_id": "62573805-8063-4cee-81c2-d2572c080b8d",
+          "mcp_calls": [
+            {
+              "tool": "maps_weather",
+              "arguments": {
+                "city": "杭州"
+              },
+              "cache_hit": true,
+              "cache_eligible": true,
+              "upstream_sessions": 0,
+              "redis_read_ms": 0.31779997516423464,
+              "redis_value_present": true,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "bea3a1d60985962df9970bab6452c37847f083d073557bc83935aae2915906f4",
+              "response_bytes": 1312,
+              "ms": 0.4854000872001052
+            },
+            {
+              "tool": "maps_direction_walking",
+              "arguments": {
+                "origin": "120.149189,30.255701",
+                "destination": "120.162923,30.254158"
+              },
+              "cache_hit": true,
+              "cache_eligible": true,
+              "upstream_sessions": 0,
+              "redis_read_ms": 0.3635999746620655,
+              "redis_value_present": true,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "8682bd03934e484a29bae9dcb1e4051224f774da42102dda155879daaae640ef",
+              "response_bytes": 1611,
+              "ms": 0.5357000045478344
+            },
+            {
+              "tool": "maps_direction_walking",
+              "arguments": {
+                "origin": "120.151347,30.258151",
+                "destination": "120.149189,30.255701"
+              },
+              "cache_hit": true,
+              "cache_eligible": true,
+              "upstream_sessions": 0,
+              "redis_read_ms": 0.7711000507697463,
+              "redis_value_present": true,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "46b4a8a5a707eef8a35a714828e9d0d4072897557925267fe55f183466eeb2b4",
+              "response_bytes": 555,
+              "ms": 0.8405999979004264
+            },
+            {
+              "tool": "maps_direction_walking",
+              "arguments": {
+                "origin": "120.162923,30.254158",
+                "destination": "120.163591,30.252629"
+              },
+              "cache_hit": true,
+              "cache_eligible": true,
+              "upstream_sessions": 0,
+              "redis_read_ms": 1.0704000014811754,
+              "redis_value_present": true,
+              "is_error": false,
+              "business_errors": [],
+              "result_sha256": "c8402e042b096f887b115fb8f7ebc9a8be2b4fc47556ab49cc210ff16f1887cf",
+              "response_bytes": 585,
+              "ms": 1.1783000081777573
+            }
+          ],
+          "model_calls": [
+            {
+              "run_id": "01a132dc-62f8-7870-9b40-682abf5246df",
+              "seconds": 1.2846201000502333,
+              "usage": [
+                {
+                  "input_tokens": 1962,
+                  "output_tokens": 221,
+                  "total_tokens": 2183,
+                  "input_token_details": {
+                    "cache_read": 1792
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-6837-7c53-9eb4-9f5cd053e88c",
+              "seconds": 0.5818127999082208,
+              "usage": [
+                {
+                  "input_tokens": 1603,
+                  "output_tokens": 33,
+                  "total_tokens": 1636,
+                  "input_token_details": {
+                    "cache_read": 1408
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-6a8a-7572-8f0a-2dddf3b9b6ac",
+              "seconds": 2.1468814000254497,
+              "usage": [
+                {
+                  "input_tokens": 1966,
+                  "output_tokens": 285,
+                  "total_tokens": 2251,
+                  "input_token_details": {
+                    "cache_read": 1536
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-732c-7d40-b472-94ec3c1dfe1f",
+              "seconds": 1.096403400064446,
+              "usage": [
+                {
+                  "input_tokens": 4976,
+                  "output_tokens": 193,
+                  "total_tokens": 5169,
+                  "input_token_details": {
+                    "cache_read": 3456
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-778b-7522-aa18-fb2879cabad4",
+              "seconds": 2.291957800043747,
+              "usage": [
+                {
+                  "input_tokens": 5717,
+                  "output_tokens": 407,
+                  "total_tokens": 6124,
+                  "input_token_details": {
+                    "cache_read": 5120
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            },
+            {
+              "run_id": "01a132dc-80bb-7323-8af0-a285607647be",
+              "seconds": 1.3502416000701487,
+              "usage": [
+                {
+                  "input_tokens": 1446,
+                  "output_tokens": 174,
+                  "total_tokens": 1620,
+                  "input_token_details": {
+                    "cache_read": 768
+                  },
+                  "output_token_details": {}
+                }
+              ]
+            }
+          ],
+          "nodes": [
+            {
+              "name": "understand",
+              "seconds": 1.297861900064163
+            },
+            {
+              "name": "researcher",
+              "seconds": 0.016743000014685094
+            },
+            {
+              "name": "context_analyst",
+              "seconds": 2.8051218000473455
+            },
+            {
+              "name": "planner",
+              "seconds": 3.4604476999957114
+            },
+            {
+              "name": "reviewer",
+              "seconds": 1.4002672000788152
+            }
+          ],
+          "attempts": [
+            {
+              "http": 200,
+              "seconds": 9.063690800103359,
+              "response": {
+                "conversation_id": "62573805-8063-4cee-81c2-d2572c080b8d",
+                "title": "杭州一天西湖美食轻松游",
+                "status": "waiting_approval",
+                "interrupt": {
+                  "type": "confirm",
+                  "question": "是否接受当前行程？回复“确认”接受方案；如需修改，请直接说明修改要求。",
+                  "summary": "杭州行程方案\n出行人数：2 人\n交通方式：步行\n\n第 1 天（2026-10-14）\n1. 杭州西湖风景名胜区-断桥残雪（龙井路1号杭州西湖风景名胜区内(东北角)）；预计停留 45 分钟\n2. 杭州西湖风景名胜区-白堤（西湖街道龙井路1号杭州西湖风景名胜区内(东北角)）；预计停留 40 分钟；到达交通：步行，约 5 分钟\n3. 湖滨步行街（凤起路539-4号(龙翔桥地铁站C口步行120米)）；预计停留 70 分钟；到达交通：步行，约 28 分钟\n4. 知味观(湖滨总店)（仁和路83-1号(龙翔桥地铁站C口步行210米)）；预计停留 75 分钟；到达交通：步行，约 3 分钟\n\n预计费用（全体出行人员，人民币）\n总额：尚未估算\n\n行程说明\n- 按你的节奏，这一天集中在西湖东岸到湖滨一带：断桥残雪→白堤→湖滨步行街→知味观（湖滨总店），全天步行约 3 公里左右，中途可在湖畔或商场里坐下休息。\n- 每天前往第一站（断桥残雪）的交通尚未安排，补充酒店或出发位置后可以完善。\n- 10 月 14 日杭州多云，白天约 25℃、夜间约 18℃，适合步行；白天注意防晒补水，早晚可加一件薄外套。\n- 门票、餐饮和住宿费用尚未确认，暂时无法估算总花费；你没有设预算，不用赶时间，也可以先按人均百元上下准备餐饮开销。\n- 两个用餐点都在湖滨商圈，饭点可能需要排队，建议比常规用餐时间早到或错峰前往。\n- 当天共4个游览点（断桥残雪、白堤、湖滨步行街、知味观），略多于“每天2到3个地点”的偏好，但断桥残雪→白堤属同一段落顺路衔接、知味观为用餐点，整体节奏仍算轻松，不构成阻断问题。\n- 首站断桥残雪的到达方式未注明（transport 为空），若从市区出发需自行前往；步行总时长约36分钟，符合步行要求。",
+                  "missing_fields": [],
+                  "issues": [],
+                  "trip_request": {
+                    "destination_city": "杭州",
+                    "departure_city": "杭州",
+                    "days": 1,
+                    "start_date": "2026-10-14",
+                    "travelers": 2,
+                    "budget": null,
+                    "budget_scope": null,
+                    "preferences": [
+                      "西湖景观",
+                      "本地美食",
+                      "节奏轻松",
+                      "每天2到3个游览地点"
+                    ],
+                    "must_visit": [],
+                    "transport": "步行",
+                    "additional_requirements": [
+                      "不需要安排酒店",
+                      "不需要城际交通",
+                      "由规划方合理安排其他细节"
+                    ]
+                  },
+                  "itinerary": {
+                    "days": [
+                      {
+                        "day": 1,
+                        "visits": [
+                          {
+                            "place_id": "B023B01EE6",
+                            "stay_minutes": 45,
+                            "transport": null,
+                            "travel_minutes": null
+                          },
+                          {
+                            "place_id": "B0FFFTYEG4",
+                            "stay_minutes": 40,
+                            "transport": "步行",
+                            "travel_minutes": 5
+                          },
+                          {
+                            "place_id": "B0FFL9RQ5O",
+                            "stay_minutes": 70,
+                            "transport": "步行",
+                            "travel_minutes": 28
+                          },
+                          {
+                            "place_id": "B0FFH154X7",
+                            "stay_minutes": 75,
+                            "transport": "步行",
+                            "travel_minutes": 3
+                          }
+                        ]
+                      }
+                    ],
+                    "estimated_cost": {
+                      "total": null,
+                      "breakdown": {}
+                    },
+                    "notes": [
+                      "按你的节奏，这一天集中在西湖东岸到湖滨一带：断桥残雪→白堤→湖滨步行街→知味观（湖滨总店），全天步行约 3 公里左右，中途可在湖畔或商场里坐下休息。",
+                      "每天前往第一站（断桥残雪）的交通尚未安排，补充酒店或出发位置后可以完善。",
+                      "10 月 14 日杭州多云，白天约 25℃、夜间约 18℃，适合步行；白天注意防晒补水，早晚可加一件薄外套。",
+                      "门票、餐饮和住宿费用尚未确认，暂时无法估算总花费；你没有设预算，不用赶时间，也可以先按人均百元上下准备餐饮开销。",
+                      "两个用餐点都在湖滨商圈，饭点可能需要排队，建议比常规用餐时间早到或错峰前往。",
+                      "当天共4个游览点（断桥残雪、白堤、湖滨步行街、知味观），略多于“每天2到3个地点”的偏好，但断桥残雪→白堤属同一段落顺路衔接、知味观为用餐点，整体节奏仍算轻松，不构成阻断问题。",
+                      "首站断桥残雪的到达方式未注明（transport 为空），若从市区出发需自行前往；步行总时长约36分钟，符合步行要求。"
+                    ]
+                  },
+                  "candidates": {
+                    "attractions": [
+                      {
+                        "id": "B023B13L9M",
+                        "name": "杭州西湖风景名胜区",
+                        "location": "120.121358,30.222692",
+                        "category": "风景名胜;国家级景点",
+                        "address": "西湖街道龙井路1号",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B01EE6",
+                        "name": "杭州西湖风景名胜区-断桥残雪",
+                        "location": "120.151347,30.258151",
+                        "category": "风景名胜;国家级景点",
+                        "address": "龙井路1号杭州西湖风景名胜区内(东北角)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B0FFFTYEG4",
+                        "name": "杭州西湖风景名胜区-白堤",
+                        "location": "120.149189,30.255701",
+                        "category": "风景名胜;风景名胜",
+                        "address": "西湖街道龙井路1号杭州西湖风景名胜区内(东北角)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B0AC72",
+                        "name": "西湖风景区-苏堤",
+                        "location": "120.139291,30.240338",
+                        "category": "风景名胜;风景名胜",
+                        "address": "龙井路1号杭州西湖风景名胜区内(东侧)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B023B2",
+                        "name": "杭州西湖风景名胜区-花港观鱼",
+                        "location": "120.139095,30.230233",
+                        "category": "风景名胜;风景名胜",
+                        "address": "西湖街道西山路5-1号",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B0247C",
+                        "name": "杭州西湖风景名胜区-柳浪闻莺",
+                        "location": "120.156326,30.240389",
+                        "category": "风景名胜;风景名胜",
+                        "address": "清波街道南山路87号",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B01D2F",
+                        "name": "杭州西湖风景名胜区-涌金公园",
+                        "location": "120.160139,30.245915",
+                        "category": "风景名胜;公园广场;公园",
+                        "address": "杭州西湖风景名胜区内(东北角)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B0FFL9RQ5O",
+                        "name": "湖滨步行街",
+                        "location": "120.162923,30.254158",
+                        "category": "购物服务;特色商业街;步行街",
+                        "address": "凤起路539-4号(龙翔桥地铁站C口步行120米)",
+                        "source": "amap"
+                      }
+                    ],
+                    "restaurants": [
+                      {
+                        "id": "B0FFH154X7",
+                        "name": "知味观(湖滨总店)",
+                        "location": "120.163591,30.252629",
+                        "category": "餐饮服务;中餐厅",
+                        "address": "仁和路83-1号(龙翔桥地铁站C口步行210米)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B023B1994H",
+                        "name": "杭州酒家(延安路店)",
+                        "location": "120.164014,30.251744",
+                        "category": "餐饮服务;中餐厅;综合酒楼",
+                        "address": "延安路205号1-3层(龙翔桥地铁站C口步行270米)",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B0FFI927N3",
+                        "name": "新白鹿(杭州湖滨in77店)",
+                        "location": "120.164784,30.250865",
+                        "category": "餐饮服务;中餐厅;浙江菜",
+                        "address": "解放路238号湖滨银泰C3区3F",
+                        "source": "amap"
+                      },
+                      {
+                        "id": "B0KR0UN1M0",
+                        "name": "赵府私厨·老杭帮菜(西湖老店)",
+                        "location": "120.161278,30.255553",
+                        "category": "餐饮服务;中餐厅;浙江菜",
+                        "address": "学士路92号(星远里二弄西门旁)",
+                        "source": "amap"
+                      }
+                    ],
+                    "hotels": []
+                  }
+                },
+                "saved_itinerary_id": null,
+                "saved_itinerary_version": null,
+                "items": [
+                  {
+                    "id": "df8ea459-fed1-44df-ac99-204ce457e1ce",
+                    "role": "user",
+                    "content": "2026年10月14日起去杭州玩1天，2位成年人，步行，喜欢西湖景观和本地美食，每天2到3个游览地点，节奏轻松。杭州当地出发，无必须去的地点，不设预算，不需要安排酒店，不需要城际交通。请直接生成完整行程，其他细节由你合理安排。"
+                  }
+                ]
+              }
+            }
+          ],
+          "research_cache_lookups": [
+            {
+              "hit": true,
+              "ms": 0.5943999858573079,
+              "key": "travelbuddy:eval:research-cache-smoke-20261013T092349:case01:research:candidates:v1:1a446ba1c17471bfbdbb179de0c598c0064c8e241d8860c666a42117aba54fc7"
+            }
+          ],
+          "seconds": 9.06369330000598,
+          "http": 200,
+          "status": "waiting_approval",
+          "trip_request": {
+            "destination_city": "杭州",
+            "departure_city": "杭州",
+            "days": 1,
+            "start_date": "2026-10-14",
+            "travelers": 2,
+            "budget": null,
+            "budget_scope": null,
+            "preferences": [
+              "西湖景观",
+              "本地美食",
+              "节奏轻松",
+              "每天2到3个游览地点"
+            ],
+            "must_visit": [],
+            "transport": "步行",
+            "additional_requirements": [
+              "不需要安排酒店",
+              "不需要城际交通",
+              "由规划方合理安排其他细节"
+            ]
+          },
+          "itinerary_days": 1,
+          "complete_plan": true,
+          "metrics": {
+            "model_calls": 6,
+            "mcp_calls": 4,
+            "eligible_calls": 4,
+            "cache_hits": 4,
+            "hit_rate_pct": 100.0,
+            "upstream_tool_calls": 0,
+            "tool_seconds_sum": 0.0030400000978261232,
+            "business_or_tool_errors": 0,
+            "cached_error_hits": 0
+          }
+        }
+      },
+      "exact_replays": [
+        {
+          "tool": "maps_weather",
+          "arguments": {
+            "city": "杭州"
+          },
+          "cold_ms": 1178.1464000232518,
+          "warm_ms": 0.5505000008270144,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3563
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "keywords": "西湖 景点",
+            "city": "杭州",
+            "citylimit": true
+          },
+          "cold_ms": 1310.895700007677,
+          "warm_ms": 0.5031999899074435,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3565
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "keywords": "西湖 周边 餐厅",
+            "city": "杭州",
+            "citylimit": true
+          },
+          "cold_ms": 1329.9468000186607,
+          "warm_ms": 0.4760000156238675,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3565
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "keywords": "杭州 本地美食 杭帮菜",
+            "city": "杭州",
+            "citylimit": true
+          },
+          "cold_ms": 1350.6728999782354,
+          "warm_ms": 0.4510000580921769,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3565
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "city": "杭州",
+            "citylimit": true,
+            "keywords": "西湖 步行 游览 景点"
+          },
+          "cold_ms": 1063.4649000130594,
+          "warm_ms": 0.24640001356601715,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3567
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "city": "杭州",
+            "citylimit": true,
+            "keywords": "湖滨 步行街 西湖 断桥"
+          },
+          "cold_ms": 1169.3291999399662,
+          "warm_ms": 0.3095000283792615,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3567
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "city": "杭州",
+            "citylimit": true,
+            "keywords": "柳浪闻莺 涌金公园"
+          },
+          "cold_ms": 1108.2378000719473,
+          "warm_ms": 0.32670004293322563,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3569
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "city": "杭州",
+            "citylimit": true,
+            "keywords": "断桥残雪 白堤"
+          },
+          "cold_ms": 1175.5535999545828,
+          "warm_ms": 0.4287000047042966,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3569
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "city": "杭州",
+            "citylimit": true,
+            "keywords": "杭州 老字号 杭帮菜 湖滨"
+          },
+          "cold_ms": 1188.9770000707358,
+          "warm_ms": 0.4560999805107713,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3569
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "city": "杭州",
+            "citylimit": true,
+            "keywords": "苏堤 花港观鱼 雷峰塔 景点"
+          },
+          "cold_ms": 1205.0189999863505,
+          "warm_ms": 0.4585999995470047,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3572
+        },
+        {
+          "tool": "maps_text_search",
+          "arguments": {
+            "city": "杭州",
+            "citylimit": true,
+            "keywords": "杭州 知味观 新白鹿 杭帮菜"
+          },
+          "cold_ms": 1221.5911999810487,
+          "warm_ms": 0.42090006172657013,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3572
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B023B0AC72"
+          },
+          "cold_ms": 1149.1937999380752,
+          "warm_ms": 0.22389995865523815,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3575
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B023B13L9M"
+          },
+          "cold_ms": 1165.3113999636844,
+          "warm_ms": 0.20180002320557833,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3575
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B0FFL9RQ5O"
+          },
+          "cold_ms": 1183.6832999251783,
+          "warm_ms": 0.19040005281567574,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3575
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B0FFFTYEG4"
+          },
+          "cold_ms": 1191.2688999436796,
+          "warm_ms": 0.23310002870857716,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3575
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B023B09LKR"
+          },
+          "cold_ms": 1032.296699937433,
+          "warm_ms": 0.2266999799758196,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3576
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B023B0247C"
+          },
+          "cold_ms": 1071.6615000274032,
+          "warm_ms": 0.3276999341323972,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3576
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B0FFH154X7"
+          },
+          "cold_ms": 1091.8755000457168,
+          "warm_ms": 0.22119993809610605,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3576
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B023B1994H"
+          },
+          "cold_ms": 1129.3439000146464,
+          "warm_ms": 0.2095999661833048,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3578
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B0FFI927N3"
+          },
+          "cold_ms": 1140.2200000593439,
+          "warm_ms": 0.24259998463094234,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3578
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B0KR0UN1M0"
+          },
+          "cold_ms": 1153.7088000914082,
+          "warm_ms": 0.206099939532578,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3579
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B023B01EE6"
+          },
+          "cold_ms": 1046.5956000844017,
+          "warm_ms": 0.20140002015978098,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3581
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B023B01D2F"
+          },
+          "cold_ms": 1067.1833000378683,
+          "warm_ms": 0.2096000825986266,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3581
+        },
+        {
+          "tool": "maps_search_detail",
+          "arguments": {
+            "id": "B023B023B2"
+          },
+          "cold_ms": 1074.587699957192,
+          "warm_ms": 0.1976999919861555,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3581
+        },
+        {
+          "tool": "maps_direction_walking",
+          "arguments": {
+            "origin": "120.151347,30.258151",
+            "destination": "120.149189,30.255701"
+          },
+          "cold_ms": 1033.9943000581115,
+          "warm_ms": 0.21349999587982893,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3586
+        },
+        {
+          "tool": "maps_direction_walking",
+          "arguments": {
+            "origin": "120.149189,30.255701",
+            "destination": "120.162923,30.254158"
+          },
+          "cold_ms": 1043.1579999858513,
+          "warm_ms": 0.3458000719547272,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3586
+        },
+        {
+          "tool": "maps_direction_walking",
+          "arguments": {
+            "origin": "120.162923,30.254158",
+            "destination": "120.163591,30.252629"
+          },
+          "cold_ms": 1062.0517999632284,
+          "warm_ms": 0.3594000590965152,
+          "cache_hit": true,
+          "upstream_sessions": 0,
+          "same_result": true,
+          "business_errors": [],
+          "ttl": 3587
+        }
+      ],
+      "valid_complete_pair": true,
+      "observed_reduction_pct": 71.44338290690217,
+      "same_extracted_request": false,
+      "same_candidates": true,
+      "research_cache_ttl": 3584
+    }
+  ],
+  "model": "deepseek-flash",
+  "cache_ttl_seconds": 3600,
+  "checkpoint_postgres": true,
+  "redis_ping": true,
+  "redis_version": "3.2.100",
+  "redis_url_source": "REDIS_URL environment or project configuration",
+  "evaluation_username": "research-cache-smoke-20261013T092349",
+  "database_health_http": 200,
+  "finished_at": "2026-10-13T09:24:35.535747+08:00",
+  "finished": true
+}

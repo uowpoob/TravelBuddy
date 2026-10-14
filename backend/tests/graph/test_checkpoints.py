@@ -79,12 +79,11 @@ async def test_postgres_connection_failure_is_not_hidden():
     with patch(
         "backend.app.graph.checkpoints.AsyncPostgresSaver.from_conn_string",
         side_effect=ConnectionError("database unavailable"),
-    ):
-        with pytest.raises(ConnectionError, match="database unavailable"):
-            async with open_checkpointer(
-                settings_for("postgresql://checkpoint:unused@localhost/checkpoints")
-            ):
-                pytest.fail("Connection failure must not fall back to memory")
+    ), pytest.raises(ConnectionError, match="database unavailable"):
+        async with open_checkpointer(
+            settings_for("postgresql://checkpoint:unused@localhost/checkpoints")
+        ):
+            pytest.fail("Connection failure must not fall back to memory")
 
 
 @pytest.mark.asyncio

@@ -6,7 +6,6 @@ from langchain_core.tools import BaseTool
 
 from backend.app.integrations.mcp.client import AmapMCPError
 
-
 RESEARCHER_TOOL_NAMES = (
     "maps_text_search",
     "maps_around_search",

@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: travelbuddy
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: travelbuddy_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U travelbuddy -d travelbuddy_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # These credentials belong only to this job's disposable services.
+      DATABASE_DSN: postgresql://travelbuddy:ci-only-password@127.0.0.1:5432/travelbuddy_ci
+      LANGGRAPH_PG_DSN: postgresql://travelbuddy:ci-only-password@127.0.0.1:5432/travelbuddy_ci
+      TRAVELBUDDY_TEST_DATABASE_DSN: postgresql://travelbuddy:ci-only-password@127.0.0.1:5432/travelbuddy_ci
+      REDIS_URL: redis://127.0.0.1:6379/0
+      TRAVELBUDDY_TEST_REDIS_URL: redis://127.0.0.1:6379/0
+      AUTH_SECRET_KEY: ci-only-signing-secret-never-used-in-production-123456
+      DEEPSEEK_API_KEY: ci-placeholder
+      DEEPSEEK_BASE_URL: https://example.invalid
+      GD_API_KEY: ""
+      LANGSMITH_TRACING: "false"
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.13.0"
+          enable-cache: true
+
+      - name: Install pinned Python
+        run: uv python install
+
+      - name: Install locked dependencies
+        run: uv sync --locked --dev
+
+      - name: Check Python code
+        run: uv run --locked ruff check backend
+
+      - name: Apply database migrations
+        run: uv run --locked alembic upgrade head
+
+      - name: Initialize PostgreSQL checkpoints
+        run: uv run --locked python -m backend.scripts.init_checkpoints
+
+      - name: Run backend tests including PostgreSQL and Redis
+        run: uv run --locked pytest -ra
+
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run frontend tests
+        run: npm test
+
+      - name: Check types and build frontend
+        run: npm run build

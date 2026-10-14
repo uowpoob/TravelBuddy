@@ -1,0 +1,11 @@
+{
+  "run": "redis-planning-20261013T083810",
+  "started_at": "2026-10-13T08:38:10.959685+08:00",
+  "transport": "FastAPI HTTPX ASGI; real model, Amap MCP, Redis, PostgreSQL/checkpoints",
+  "method": "10 independent namespaces; identical prompts in fresh cold/warm conversations; exact tool-argument replay after each pair",
+  "pairs": [],
+  "model": "deepseek-flash",
+  "cache_ttl_seconds": 3600,
+  "checkpoint_postgres": true,
+  "fatal_error_type": "ConnectionError"
+}

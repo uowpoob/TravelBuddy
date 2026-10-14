@@ -94,20 +94,22 @@ class AmapMCPClient:
     @asynccontextmanager
     async def _session(self) -> AsyncIterator[ClientSession]:
         try:
-            async with streamable_http_client(self._url.get_secret_value()) as (
-                read_stream,
-                write_stream,
-            ):
-                async with ClientSession(
+            async with (
+                streamable_http_client(self._url.get_secret_value()) as (
+                    read_stream,
+                    write_stream,
+                ),
+                ClientSession(
                     read_stream,
                     write_stream,
                     read_timeout_seconds=self._timeout_seconds,
-                ) as session:
-                    await session.initialize()
-                    yield session
+                ) as session,
+            ):
+                await session.initialize()
+                yield session
         except AmapMCPError:
             raise
-        except Exception:
+        except Exception:  # noqa: BLE001 -- sanitize all SDK errors containing auth URLs
             # SDK/HTTP 异常可能包含鉴权 URL，不向调用方暴露原始异常链。
             raise AmapMCPError(
                 "高德 MCP 连接或请求失败，请检查 GD_API_KEY、"
