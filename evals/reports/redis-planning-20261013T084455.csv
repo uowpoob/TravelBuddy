@@ -1,0 +1,11 @@
+﻿case,cold_seconds,warm_seconds,observed_reduction_pct,cold_hits,cold_queries,warm_hits,warm_queries,warm_hit_rate_pct,cold_model_calls,warm_model_calls,cold_upstream_calls,warm_upstream_calls,cold_errors,warm_errors,warm_cached_errors,cold_status,warm_status,same_extracted_request,same_core_parameters,warm_valid_hit_rate_pct
+杭州西湖1日,24.079,23.288,3.28,0,25,5,17,29.41,11,10,25,12,6,0,0,waiting_approval,waiting_approval,False,True,29.41
+杭州文化2日,33.198,49.933,-50.41,0,30,2,65,3.08,10,19,30,63,12,26,0,waiting_approval,waiting_approval,False,True,3.08
+北京历史2日,69.503,24.445,64.83,2,53,9,32,28.12,28,10,51,23,2,2,0,waiting_approval,waiting_approval,False,True,28.12
+上海漫步1日,26.854,19.578,27.09,0,26,7,20,35.0,13,11,26,13,5,1,0,waiting_approval,waiting_approval,False,True,35.0
+苏州园林2日,43.901,26.828,38.89,0,49,10,31,32.26,17,12,49,21,13,3,0,waiting_approval,waiting_approval,False,True,32.26
+南京文化1日,36.914,27.151,26.45,3,39,5,30,16.67,18,13,36,25,11,6,0,waiting_approval,waiting_approval,False,False,16.67
+成都休闲2日,35.146,30.783,12.42,0,47,11,32,34.38,14,13,47,21,17,3,0,waiting_approval,waiting_approval,False,True,34.38
+西安古城2日,42.749,29.524,30.94,3,47,9,34,26.47,16,12,44,25,12,5,0,waiting_approval,waiting_approval,False,True,26.47
+厦门海滨1日,34.885,21.763,37.61,0,51,4,21,19.05,15,11,51,17,22,3,0,waiting_approval,waiting_approval,False,True,19.05
+广州美食1日,39.236,29.038,25.99,4,34,6,29,20.69,19,13,30,23,6,3,0,waiting_approval,waiting_approval,False,True,20.69

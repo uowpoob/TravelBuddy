@@ -1,0 +1,28 @@
+{
+  "run": "research-cache-smoke-20261013T092349",
+  "model": "deepseek-flash",
+  "cold_seconds": 31.739380300045013,
+  "warm_seconds": 9.06369330000598,
+  "reduction_pct": 71.44338290690217,
+  "same_candidates": true,
+  "research_cache_ttl": 3584,
+  "cold_research_seconds": 23.80079669994302,
+  "warm_research_seconds": 0.016743000014685094,
+  "cold_research_calls": 28,
+  "warm_research_calls": 0,
+  "cold_model_calls": 15,
+  "warm_model_calls": 6,
+  "cold_upstream_mcp": 32,
+  "warm_upstream_mcp": 0,
+  "cold_qps_errors": 5,
+  "warm_qps_errors": 0,
+  "targeted_tests": {
+    "passed": 21,
+    "skipped": 1
+  },
+  "existing_handoff_tests": {
+    "passed": 6,
+    "failed": 3,
+    "same_failures_on_HEAD": true
+  }
+}

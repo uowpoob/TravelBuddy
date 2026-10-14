@@ -6,7 +6,6 @@ from langchain_core.tools import BaseTool
 
 from backend.app.integrations.mcp.client import AmapMCPError
 
-
 PLANNER_TOOL_NAMES = (
     "maps_direction_walking",
     "maps_direction_driving",

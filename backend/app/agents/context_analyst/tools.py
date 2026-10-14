@@ -6,7 +6,6 @@ from langchain_core.tools import BaseTool
 
 from backend.app.integrations.mcp.client import AmapMCPError
 
-
 CONTEXT_ANALYST_TOOL_NAMES = ("maps_weather",)
 
 
