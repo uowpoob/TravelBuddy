@@ -10,6 +10,7 @@ from pydantic import SecretStr
 
 from backend.app import lifespan as lifespan_module
 from backend.app.api.dependencies import get_trip_graph
+from backend.app.integrations.mcp import AmapMCPSettings
 
 
 @pytest.fixture
@@ -26,7 +27,9 @@ def runtime_resources(monkeypatch):
     monkeypatch.setattr(
         lifespan_module,
         "AmapMCPSettings",
-        lambda: SimpleNamespace(api_key=SecretStr("test-key")),
+        lambda: AmapMCPSettings(
+            _env_file=None, api_key=SecretStr("test-key"), redis_url=SecretStr("")
+        ),
     )
     client = SimpleNamespace(close=AsyncMock())
     monkeypatch.setattr(lifespan_module, "AmapMCPClient", lambda settings: client)

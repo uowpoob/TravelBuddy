@@ -13,7 +13,7 @@ from backend.app.schemas.review import ReviewResult
 
 
 @pytest.mark.asyncio
-async def test_repeated_reviewer_rejection_stops_after_two_repairs(
+async def test_repeated_reviewer_rejection_stops_after_one_repair(
     confirmed_trip_state,
 ):
     planner = AsyncMock()
@@ -43,7 +43,7 @@ async def test_repeated_reviewer_rejection_stops_after_two_repairs(
         config={"configurable": {"thread_id": "revision-limit"}},
         context=TravelBuddyContext(user_id=1, conversation_id="revision-limit"),
     )
-    assert result["revision_count"] == 2
+    assert result["revision_count"] == 1
     assert result["__interrupt__"][0].value["type"] == "clarify"
     assert "测试不可满足约束" in result["__interrupt__"][0].value["question"]
-    assert planner.ainvoke.await_count == 3  # initial plan plus two repairs
+    assert planner.ainvoke.await_count == 2  # initial plan plus one repair

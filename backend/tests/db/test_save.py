@@ -25,6 +25,7 @@ from backend.app.graph.nodes.confirm import ConfirmNode
 from backend.app.graph.nodes.planner import PlannerNode
 from backend.app.graph.nodes.save import SaveNode
 from backend.app.graph.state import TripState
+from backend.app.integrations.mcp import AmapMCPSettings
 from backend.app.models import Conversation, SavedItinerary, User
 from backend.app.schemas.structured_output import RequestUnderstanding
 from backend.app.services.itineraries import (
@@ -371,7 +372,9 @@ async def test_cli_reopens_pg_checkpoint_and_saves_with_mock_agents(
     monkeypatch.setattr(
         trip_chat,
         "AmapMCPSettings",
-        lambda: SimpleNamespace(api_key=SecretStr("unused")),
+        lambda: AmapMCPSettings(
+            _env_file=None, api_key=SecretStr("unused"), redis_url=SecretStr("")
+        ),
     )
     monkeypatch.setattr(
         trip_chat, "AmapMCPClient", lambda config: SimpleNamespace(close=AsyncMock())
@@ -380,8 +383,8 @@ async def test_cli_reopens_pg_checkpoint_and_saves_with_mock_agents(
     monkeypatch.setattr(
         trip_chat,
         "build_trip_graph",
-        lambda agents, checkpointer: build_trip_graph(
-            agents, checkpointer=checkpointer, understand_model=model
+        lambda agents, checkpointer, **kwargs: build_trip_graph(
+            agents, checkpointer=checkpointer, understand_model=model, **kwargs
         ),
     )
     created_conversations = set()

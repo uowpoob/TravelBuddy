@@ -397,4 +397,4 @@ npm run build
 
 本地未设置测试连接地址时，PostgreSQL 和 Redis 集成测试会跳过；如需运行，使用独立测试数据库，先配置 `DATABASE_DSN` 并执行 `uv run --locked alembic upgrade head`，再把同一地址设为 `TRAVELBUDDY_TEST_DATABASE_DSN`。设置 `TRAVELBUDDY_TEST_REDIS_URL` 可启用真实 Redis 测试。
 
-若要要求 PR 检查通过后才能合并，在 GitHub 中为主分支 `master` 配置分支保护或 ruleset，将 `Backend checks` 和 `Frontend checks` 设为必需状态检查。当前工作流负责验证代码，不包含服务器部署。
+若要要求 PR 检查通过后才能合并，在 GitHub 中为主分支 `master` 配置分支保护或 ruleset，将 `Backend checks` 和 `Frontend checks` 设为必需状态检查。`master` 的推送或手动运行在两项检查通过后会执行生产部署；首次使用需按 [CD 配置说明](deploy/CD.md) 设置服务器 SSH 连接信息。

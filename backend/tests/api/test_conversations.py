@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -28,6 +29,8 @@ def conversation_api():
     user = User(id=41, username="conversation_user")
     session = MagicMock(spec=AsyncSession)
     session.scalar.return_value = None
+    session.scalars.return_value = MagicMock()
+    session.scalars.return_value.all.return_value = []
     session.get = AsyncMock(
         side_effect=lambda model, user_id: user if user_id == user.id else None
     )
@@ -155,6 +158,13 @@ def conversation_queries(conversation_api):
     @event.listens_for(engine, "connect")
     def add_postgres_trim(connection, _):
         connection.create_function("btrim", 1, str.strip)
+        # Emulate the object check in this SQLite query fixture; PostgreSQL
+        # integration tests exercise the actual JSONB constraint.
+        connection.create_function(
+            "jsonb_typeof",
+            1,
+            lambda value: "object" if isinstance(json.loads(value), dict) else "other",
+        )
 
     try:
         Conversation.__table__.create(engine)
@@ -298,13 +308,13 @@ def test_list_has_stable_order_when_update_times_match(conversation_queries):
     ]
 
 
-def test_list_defaults_to_twenty_items_and_accepts_maximum_limit(conversation_queries):
+def test_list_defaults_to_ten_items_and_accepts_maximum_limit(conversation_queries):
     api = conversation_queries
     for _ in range(25):
         api.seed()
     response = api.client.get("/api/v1/conversations", headers=api.headers)
     assert response.status_code == 200
-    assert len(response.json()) == 20
+    assert len(response.json()) == 10
     response = api.client.get(
         "/api/v1/conversations", headers=api.headers, params={"limit": 100}
     )

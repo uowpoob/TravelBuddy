@@ -53,13 +53,18 @@ def test_missing_required_request_is_rejected(confirmed_trip_state, field):
 
 
 @pytest.mark.parametrize(
-    "days", [[], [DayPlan(day=2)], [DayPlan(day=1), DayPlan(day=1)]]
+    "days, issue",
+    [
+        ([], "尚未生成具体行程"),
+        ([DayPlan(day=2)], "连续排列"),
+        ([DayPlan(day=1), DayPlan(day=1)], "连续排列"),
+    ],
 )
-def test_day_count_and_order_must_match_request(confirmed_trip_state, days):
+def test_day_count_and_order_must_match_request(confirmed_trip_state, days, issue):
     confirmed_trip_state["itinerary"] = Itinerary(
         days=days, estimated_cost=EstimatedCost()
     )
-    with pytest.raises(ItinerarySaveError, match="每日编号"):
+    with pytest.raises(ItinerarySaveError, match=issue):
         build_snapshot(**snapshot_values(confirmed_trip_state))
 
 
@@ -73,7 +78,7 @@ def test_empty_activity_plan_is_rejected(confirmed_trip_state):
 
 def test_unknown_place_reference_is_rejected(confirmed_trip_state):
     confirmed_trip_state["candidates"] = Candidates()
-    with pytest.raises(ItinerarySaveError, match="地点信息缺失"):
+    with pytest.raises(ItinerarySaveError, match="地点不可用"):
         build_snapshot(**snapshot_values(confirmed_trip_state))
 
 
