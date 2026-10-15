@@ -45,6 +45,7 @@ def message_api(confirmed_trip_state, monkeypatch):
     session = MagicMock(spec=AsyncSession)
     save_session = MagicMock(spec=AsyncSession)
     save_session.in_transaction.return_value = False
+    save_session.execute.return_value.rowcount = 1
     factory = MagicMock(return_value=save_session)
     save_session.__aenter__.return_value = save_session
     save = AsyncMock(return_value=SavedItineraryResult(123, 1))
@@ -57,7 +58,14 @@ def message_api(confirmed_trip_state, monkeypatch):
         user=user,
         conversation=conversation,
         busy=False,
+        itineraries={},
     )
+
+    async def save_itinerary(*args, **kwargs):
+        api.itineraries[123] = SimpleNamespace(id=123, version=1)
+        return SavedItineraryResult(123, 1)
+
+    save.side_effect = save_itinerary
 
     async def get_user(*args):
         session.in_transaction.return_value = True
@@ -69,6 +77,8 @@ def message_api(confirmed_trip_state, monkeypatch):
             return not api.busy
         params = statement.compile().params
         assert params["user_id_1"] == user.id
+        if "FROM itineraries" in str(statement):
+            return api.itineraries.get(params["id_1"])
         return conversation if params["id_1"] == conversation.id else None
 
     async def finish():
@@ -170,16 +180,17 @@ def test_send_clarify_confirm_save_and_reload_with_stable_question_ids(message_a
     assert first["status"] == "waiting_clarification"
     assert [(m["role"], m["content"]) for m in first["items"]] == [
         ("user", "想去杭州"),
-        ("assistant", "几个人出行？"),
     ]
     assert first["interrupt"]["missing_fields"] == ["travelers"]
+    assert first["interrupt"]["question"] == "几个人出行？"
     assert read(api).json()["items"] == first["items"]
 
     second = send(api, "2 人").json()
     assert second["status"] == "waiting_approval"
-    assert [(m["role"]) for m in second["items"]] == ["user", "assistant"]
+    assert [(m["role"]) for m in second["items"]] == ["assistant", "user"]
+    assert [m["content"] for m in second["items"]] == ["几个人出行？", "2 人"]
     assert second["interrupt"]["type"] == "confirm"
-    assert "测试景点" in second["items"][-1]["content"]
+    assert "测试景点" in second["interrupt"]["summary"]
     assert second["interrupt"]["itinerary"]["days"][0]["day"] == 1
     api.save.assert_not_awaited()
 
@@ -187,7 +198,9 @@ def test_send_clarify_confirm_save_and_reload_with_stable_question_ids(message_a
     assert third["status"] == "completed"
     assert third["interrupt"] is None
     assert (third["saved_itinerary_id"], third["saved_itinerary_version"]) == (123, 1)
-    assert [m["content"] for m in third["items"]] == ["确认"]
+    assert [m["role"] for m in third["items"]] == ["assistant", "user"]
+    assert "测试景点" in third["items"][0]["content"]
+    assert third["items"][1]["content"] == "确认"
     all_items = first["items"] + second["items"] + third["items"]
     assert read(api).json()["items"] == all_items
     assert len({m["id"] for m in all_items}) == 5
@@ -196,7 +209,9 @@ def test_send_clarify_confirm_save_and_reload_with_stable_question_ids(message_a
     assert api.save.await_args.args[0] is api.save_session
     assert api.save_session is not api.session
     assert api.session.commit.await_count == 3
-    api.session.rollback.assert_not_awaited()
+    # The saved-reference lookup starts a read transaction after the commit;
+    # send_message rolls it back to release the connection before returning.
+    api.session.rollback.assert_awaited_once()
     assert "updated_at=clock_timestamp()" in str(api.session.execute.await_args.args[0])
 
 
@@ -207,7 +222,7 @@ def test_confirmation_modification_runs_another_turn_without_saving(message_api)
     response = send(api, "下午改成室内活动")
     assert response.status_code == 200
     assert response.json()["status"] == "waiting_approval"
-    assert response.json()["items"][0]["content"] == "下午改成室内活动"
+    assert response.json()["items"][-1]["content"] == "下午改成室内活动"
     api.save.assert_not_awaited()
 
 

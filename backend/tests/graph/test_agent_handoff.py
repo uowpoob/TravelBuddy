@@ -136,13 +136,9 @@ async def test_cached_agents_handoff_through_subgraphs_to_parent(
         "itinerary": None,
     }
     reviewer_payload = json.loads(pairs["reviewer"][1]._inputs[0][0].content)
-    assert reviewer_payload["itinerary"] == trip_data["itinerary"].model_dump(
-        mode="json"
-    )
-    assert reviewer_payload["candidates"] == planner_payload["candidates"]
-    assert (
-        reviewer_payload["travel_constraints"] == planner_payload["travel_constraints"]
-    )
+    assert reviewer_payload["days"] == trip_data["itinerary"].model_dump(mode="json")["days"]
+    assert reviewer_payload["places"] == {"test-poi": "测试景点"}
+    assert reviewer_payload["trip_request"] == planner_payload["trip_request"]
     assert reviewer_payload["rule_issues"] == []
 
 
@@ -180,7 +176,8 @@ async def test_nodes_forward_runtime_and_validate_output(trip_data, node_type, f
         assert payload["rule_issues"] == trip_data["rule_issues"]
 
     agent.ainvoke.return_value["structured_response"] = None
-    with pytest.raises(ValidationError):
+    expected_error = RuntimeError if node_type is PlanNode else ValidationError
+    with pytest.raises(expected_error):
         await node_type(agent)(trip_data, Runtime(context=context), config)
 
 

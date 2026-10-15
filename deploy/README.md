@@ -63,6 +63,8 @@ docker compose --env-file deploy/.env exec backend python -c "import urllib.requ
 
 ## 更新与备份
 
+自动部署的首次配置和维护方式见 [CD 配置说明](CD.md)。已通过 CD 发布的应用，手动运行下方 Compose 命令前先执行 `export TRAVELBUDDY_IMAGE_TAG=$(cat .local/deployments/current-commit)` 选择当前版本。
+
 更新前备份数据库。在 Ubuntu：
 
 ```bash
