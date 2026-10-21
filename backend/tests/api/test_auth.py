@@ -88,6 +88,43 @@ def test_register_login_and_current_user(auth_api):
     assert response.json() == public_user
 
 
+def test_account_interests_save_clear_validation_and_user_isolation(auth_api):
+    client = auth_api.client
+    path = "/api/v1/auth/me/interests"
+    assert client.get(path).status_code == 401
+    assert client.put(path, json={"interest_description": "博物馆"}).status_code == 401
+    headers = []
+    for name in ("first_user", "second_user"):
+        credentials = {"username": name, "password": "test-password"}
+        client.post("/api/v1/auth/register", json=credentials)
+        token = client.post("/api/v1/auth/login", json=credentials).json()[
+            "access_token"
+        ]
+        headers.append({"Authorization": f"Bearer {token}"})
+    assert client.get(path, headers=headers[0]).json() == {"interest_description": ""}
+    result = client.put(
+        path, headers=headers[0], json={"interest_description": " 博物馆和美食 "}
+    )
+    assert result.status_code == 200
+    assert result.headers["cache-control"] == "no-store"
+    assert client.get(path, headers=headers[0]).json() == {
+        "interest_description": "博物馆和美食"
+    }
+    assert client.get(path, headers=headers[1]).json() == {"interest_description": ""}
+    for invalid in (
+        {"interest_description": "a" * 1001},
+        {"interest_description": "test", "user_id": 2},
+    ):
+        assert client.put(path, headers=headers[0], json=invalid).status_code == 422
+    assert (
+        client.get(path, headers=headers[0]).json()["interest_description"]
+        == "博物馆和美食"
+    )
+    assert client.put(
+        path, headers=headers[0], json={"interest_description": ""}
+    ).json() == {"interest_description": ""}
+
+
 def test_duplicate_registration_returns_conflict(auth_api):
     credentials = {"username": "demo_user", "password": "test-password"}
     assert (

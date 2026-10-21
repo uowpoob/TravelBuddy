@@ -1385,6 +1385,31 @@
   color: #7a9068;
   overflow-wrap: anywhere;
 }
+.account-interests {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+}
+.account-interests > label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.account-interests > p {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.account-interests textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  resize: vertical;
+  line-height: 1.8;
+  font-size: 14px;
+}
+.account-interests > button {
+  justify-self: start;
+}
 .account-future {
   display: flex;
   align-items: center;

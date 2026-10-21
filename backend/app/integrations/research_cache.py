@@ -67,11 +67,15 @@ class ResearchCandidatesCache(RedisMCPCache):
         self._policy = hashlib.sha256(SYSTEM_PROMPT.encode("utf-8")).hexdigest()
 
     def key_for(
-        self, request: TripRequest, source_messages: list[str] | None = None
+        self,
+        request: TripRequest,
+        source_messages: list[str] | None = None,
+        interest_description: str = "",
     ) -> str | None:
         if self._redis is None:
             return None
         payload = request.model_dump(mode="json")
+        payload["user_interests"] = _text(interest_description)
         # 仅处理已观测到的节奏描述分类漂移，不混淆一般偏好与硬约束。
         pace = set()
         for field in ("preferences", "additional_requirements"):
@@ -105,10 +109,13 @@ class ResearchCandidatesCache(RedisMCPCache):
         return f"{self._prefix}:research:candidates:v1:{fingerprint}"
 
     async def get_candidates(
-        self, request: TripRequest, source_messages: list[str] | None = None
+        self,
+        request: TripRequest,
+        source_messages: list[str] | None = None,
+        interest_description: str = "",
     ) -> Candidates | None:
         # 有用户消息时只用完整消息索引，避免模型漏提取新限制后误用旧结果。
-        key = self.key_for(request, source_messages)
+        key = self.key_for(request, source_messages, interest_description)
         if key is None:
             return None
         value = await self.get(key)
@@ -130,7 +137,8 @@ class ResearchCandidatesCache(RedisMCPCache):
         request: TripRequest,
         candidates: Candidates,
         source_messages: list[str] | None = None,
+        interest_description: str = "",
     ) -> None:
-        key = self.key_for(request, source_messages)
+        key = self.key_for(request, source_messages, interest_description)
         if key is not None and usable_candidates(candidates):
             await self.set(key, candidates.model_dump_json())

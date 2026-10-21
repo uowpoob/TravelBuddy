@@ -59,4 +59,15 @@ export const authApi = {
       headers: { Authorization: `Bearer ${token}` },
       signal,
     }),
+  interests: (token: string, signal?: AbortSignal) =>
+    request<{ interest_description: string }>('/me/interests', {
+      headers: { Authorization: `Bearer ${token}` },
+      signal,
+    }),
+  saveInterests: (token: string, description: string) =>
+    request<{ interest_description: string }>('/me/interests', {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ interest_description: description }),
+    }),
 }

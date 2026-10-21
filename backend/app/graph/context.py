@@ -16,3 +16,4 @@ class TravelBuddyContext:
     user_id: int
     conversation_id: str
     db: AsyncSession | None = field(default=None, repr=False, compare=False)
+    interest_description: str = ""

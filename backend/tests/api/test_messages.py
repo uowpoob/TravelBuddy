@@ -157,6 +157,21 @@ def test_new_conversation_has_empty_history_without_invoking_graph(message_api):
     api.session.commit.assert_not_awaited()
 
 
+def test_account_interests_are_forwarded_to_graph_context(message_api):
+    api = message_api
+    api.user.interest_description = "历史人文"
+    invoke = api.graph.ainvoke
+    contexts = []
+
+    async def capture(*args, **kwargs):
+        contexts.append(kwargs["context"])
+        return await invoke(*args, **kwargs)
+
+    api.graph.ainvoke = capture
+    assert send(api, "想去杭州").status_code == 200
+    assert contexts[0].interest_description == "历史人文"
+
+
 def test_send_without_model_title_does_not_generate_a_title(message_api):
     api = message_api
     response = send(api, "想去杭州。请帮我规划")

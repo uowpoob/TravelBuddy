@@ -28,6 +28,9 @@ class User(Base):
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
     username: Mapped[str] = mapped_column(String(100), unique=True)
     password_hash: Mapped[str] = mapped_column(Text)
+    interest_description: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=""
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

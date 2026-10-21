@@ -28,6 +28,12 @@ class UserPublic(BaseModel):
     created_at: datetime
 
 
+class InterestDescription(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    interest_description: str = Field(max_length=1000)
+
+
 class TokenResponse(BaseModel):
     access_token: str = Field(repr=False)
     token_type: Literal["bearer"] = "bearer"

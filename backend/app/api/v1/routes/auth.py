@@ -14,6 +14,7 @@ from backend.app.core.config import AuthSettings
 from backend.app.core.security import create_access_token
 from backend.app.models import User
 from backend.app.schemas.auth import (
+    InterestDescription,
     LoginRequest,
     RegisterRequest,
     TokenResponse,
@@ -23,6 +24,7 @@ from backend.app.services.auth import (
     UsernameAlreadyExists,
     authenticate_user,
     register_user,
+    update_interest_description,
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -74,3 +76,29 @@ async def me(
 ) -> UserPublic:
     response.headers["Cache-Control"] = "no-store"
     return UserPublic.model_validate(user)
+
+
+@router.get("/me/interests", response_model=InterestDescription)
+async def get_interests(
+    response: Response,
+    user: Annotated[User, Depends(get_current_user)],
+) -> InterestDescription:
+    response.headers["Cache-Control"] = "no-store"
+    return InterestDescription(interest_description=user.interest_description or "")
+
+
+@router.put("/me/interests", response_model=InterestDescription)
+async def put_interests(
+    payload: InterestDescription,
+    response: Response,
+    user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> InterestDescription:
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        await update_interest_description(session, user, payload.interest_description)
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503, detail="兴趣描述保存失败，请稍后重试。"
+        ) from None
+    return payload

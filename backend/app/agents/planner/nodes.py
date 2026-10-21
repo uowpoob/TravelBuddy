@@ -52,6 +52,8 @@ class PlanNode:
             payload["previous_trip_request"] = (
                 source.model_dump(mode="json") if source else None
             )
+        if runtime.context.interest_description:
+            payload["user_interests"] = runtime.context.interest_description
         message = HumanMessage(content=json.dumps(payload, ensure_ascii=False))
         result = await self.agent.ainvoke(
             {"messages": [message]},
@@ -60,9 +62,7 @@ class PlanNode:
         )
         structured = result["structured_response"]
         if structured is None:
-            raise RuntimeError(
-                "模型输出错误"
-            )
+            raise RuntimeError("模型输出错误")
         return {
             "messages": result["messages"],
             "itinerary": Itinerary.model_validate(structured),

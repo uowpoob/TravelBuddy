@@ -254,6 +254,8 @@ class ConversationChatService:
         user_id: int,
         conversation_id: str,
         payload: MessageCreate,
+        *,
+        interest_description: str = "",
     ) -> MessageTurnOut:
         graph = await self._owned_graph(session, user_id, conversation_id)
         if self.session_factory is None:
@@ -297,6 +299,7 @@ class ConversationChatService:
                             user_id=user_id,
                             conversation_id=conversation_id,
                             db=save_session,
+                            interest_description=interest_description,
                         ),
                         durability="sync",
                     )

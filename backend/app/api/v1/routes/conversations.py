@@ -202,7 +202,13 @@ async def send_message(
 ) -> MessageTurnOut:
     """非流式发送或恢复消息，等待本轮暂停或完成后返回增量消息。"""
     try:
-        return await chat.send_message(session, user.id, str(conversation_id), payload)
+        return await chat.send_message(
+            session,
+            user.id,
+            str(conversation_id),
+            payload,
+            interest_description=user.interest_description or "",
+        )
     except ConversationError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
     except SQLAlchemyError:

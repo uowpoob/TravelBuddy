@@ -38,7 +38,11 @@ class ResearcherNode:
             if isinstance(message, HumanMessage)
         ]
         candidates = (
-            await self.cache.get_candidates(state["trip_request"], source_messages)
+            await self.cache.get_candidates(
+                state["trip_request"],
+                source_messages,
+                runtime.context.interest_description,
+            )
             if self.cache is not None and not state.get("research_cache_bypass", False)
             else None
         )
@@ -51,7 +55,10 @@ class ResearcherNode:
             if self.cache is not None:
                 # 写入本次调研结果，不能混入下方合并的历史行程地点。
                 await self.cache.set_candidates(
-                    state["trip_request"], candidates, source_messages
+                    state["trip_request"],
+                    candidates,
+                    source_messages,
+                    runtime.context.interest_description,
                 )
         # 旧行程仍可能引用原候选。保留其真实地点数据，Planner 决定是否继续安排。
         if previous is not None and state.get("itinerary") is not None:

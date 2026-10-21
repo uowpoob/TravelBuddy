@@ -38,3 +38,14 @@ async def authenticate_user(
         return None
     matches = await asyncio.to_thread(verify_password, password, user.password_hash)
     return user if matches else None
+
+
+async def update_interest_description(
+    session: AsyncSession, user: User, description: str
+) -> None:
+    user.interest_description = description
+    try:
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise

@@ -89,7 +89,10 @@ class ResearchNode:
         runtime: Runtime[TravelBuddyContext],
         config: RunnableConfig,
     ) -> dict[str, object]:
-        message = HumanMessage(content=state["trip_request"].model_dump_json())
+        payload = state["trip_request"].model_dump(mode="json")
+        if runtime.context.interest_description:
+            payload["user_interests"] = runtime.context.interest_description
+        message = HumanMessage(content=json.dumps(payload, ensure_ascii=False))
         result = await self.agent.ainvoke(
             {"messages": [message]}, config=config, context=runtime.context
         )

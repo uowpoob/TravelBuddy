@@ -136,7 +136,10 @@ async def test_cached_agents_handoff_through_subgraphs_to_parent(
         "itinerary": None,
     }
     reviewer_payload = json.loads(pairs["reviewer"][1]._inputs[0][0].content)
-    assert reviewer_payload["days"] == trip_data["itinerary"].model_dump(mode="json")["days"]
+    assert (
+        reviewer_payload["days"]
+        == trip_data["itinerary"].model_dump(mode="json")["days"]
+    )
     assert reviewer_payload["places"] == {"test-poi": "测试景点"}
     assert reviewer_payload["trip_request"] == planner_payload["trip_request"]
     assert reviewer_payload["rule_issues"] == []
@@ -179,6 +182,32 @@ async def test_nodes_forward_runtime_and_validate_output(trip_data, node_type, f
     expected_error = RuntimeError if node_type is PlanNode else ValidationError
     with pytest.raises(expected_error):
         await node_type(agent)(trip_data, Runtime(context=context), config)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "node_type,field", [(ResearchNode, "candidates"), (PlanNode, "itinerary")]
+)
+async def test_account_interests_are_per_call_context(trip_data, node_type, field):
+    agent = AsyncMock()
+    agent.ainvoke.return_value = {
+        "messages": [],
+        "structured_response": trip_data[field].model_dump(mode="json"),
+    }
+    node = node_type(agent)
+    context = TravelBuddyContext(
+        user_id=1, conversation_id="one", interest_description="博物馆和美食"
+    )
+    await node(trip_data, Runtime(context=context), {})
+    first = json.loads(agent.ainvoke.await_args.args[0]["messages"][0].content)
+    assert first["user_interests"] == "博物馆和美食"
+    await node(
+        trip_data,
+        Runtime(context=TravelBuddyContext(user_id=2, conversation_id="two")),
+        {},
+    )
+    second = json.loads(agent.ainvoke.await_args.args[0]["messages"][0].content)
+    assert "user_interests" not in second
 
 
 @pytest.mark.asyncio

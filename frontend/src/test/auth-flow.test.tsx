@@ -66,6 +66,56 @@ afterEach(() => {
 })
 
 describe('登录与注册', () => {
+  it('账户页读取、保存和清空兴趣描述', async () => {
+    cachedLogin()
+    let description = '喜欢博物馆'
+    const fetch = vi.fn((url: string, options?: RequestInit) => {
+      if (url === '/api/v1/auth/me/interests') {
+        if (options?.method === 'PUT')
+          description = JSON.parse(options.body as string).interest_description
+        return Promise.resolve(response({ interest_description: description }))
+      }
+      return Promise.resolve(response(user))
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderApp('/app/settings')
+    const interaction = userEvent.setup()
+    const input = await screen.findByLabelText('兴趣描述')
+    await waitFor(() => expect(input).toHaveValue('喜欢博物馆'))
+    await interaction.clear(input)
+    await interaction.type(input, '喜欢历史人文和美食')
+    await interaction.click(screen.getByRole('button', { name: '保存兴趣描述' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('兴趣描述已保存')
+    expect(description).toBe('喜欢历史人文和美食')
+    const request = fetch.mock.calls.find(([, options]) => options?.method === 'PUT')!
+    expect(request[1]?.headers).toMatchObject({ Authorization: 'Bearer cached-token' })
+    await interaction.clear(input)
+    await interaction.click(screen.getByRole('button', { name: '保存兴趣描述' }))
+    await waitFor(() => expect(description).toBe(''))
+  })
+
+  it('兴趣描述保存失败时保留填写内容', async () => {
+    cachedLogin()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, options?: RequestInit) => {
+        if (url === '/api/v1/auth/me/interests')
+          return Promise.resolve(
+            options?.method === 'PUT' ? response({}, 503) : response({ interest_description: '' }),
+          )
+        return Promise.resolve(response(user))
+      }),
+    )
+    renderApp('/app/settings')
+    const interaction = userEvent.setup()
+    const input = await screen.findByLabelText('兴趣描述')
+    await waitFor(() => expect(input).toBeEnabled())
+    await interaction.type(input, '喜欢自然风景')
+    await interaction.click(screen.getByRole('button', { name: '保存兴趣描述' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('保存失败')
+    expect(input).toHaveValue('喜欢自然风景')
+  })
+
   it('直接访问主页面时，未登录用户进入登录面板', () => {
     const fetch = vi.fn()
     vi.stubGlobal('fetch', fetch)

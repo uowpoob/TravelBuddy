@@ -59,6 +59,19 @@ def test_key_normalizes_order_and_only_known_pace_classification():
     )
 
 
+@pytest.mark.asyncio
+async def test_account_interests_separate_candidate_cache_for_same_messages():
+    storage = cache()
+    messages = ["杭州一日游"]
+    assert storage.key_for(request(), messages, "博物馆") != storage.key_for(
+        request(), messages, "自然风景"
+    )
+    assert storage.key_for(request(), messages, "博物馆") != storage.key_for(
+        request(), messages
+    )
+    await storage.close()
+
+
 @pytest.mark.parametrize(
     "changes",
     [
